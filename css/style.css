@@ -1,4 +1,4 @@
-
+/* --- VARIABLES DE COLOR Y CONFIGURACIÓN BASE --- */
 :root {
     --bg-color: #212121;
     --surface-color: #424242;
@@ -6,7 +6,7 @@
     --accent-color: #D32F2F;
     --text-color: #FFFFFF;
     --text-muted-color: #BDBDBD;
-    --rename-color: #1976D2; 
+    --rename-color: #1976D2; /* NUEVO: Color para el botón de renombrar */
     --font-family: 'Inter', sans-serif;
 }
 
@@ -25,7 +25,7 @@ body {
 
 .app-container {
     width: 100%;
-    max-width: 600px; 
+    max-width: 600px; /* --- CAMBIO: Aumentado de 400px a 480px --- */
     background-color: #2a2a2a;
     border-radius: 20px;
     padding: 1.5rem;
@@ -95,7 +95,7 @@ header .logo img {
 }
 .category h3 i { margin-right: 8px; color: var(--brand-color); }
 
-/* ---  Botón de Reproducir Todo --- */
+/* --- NUEVO: Botón de Reproducir Todo --- */
 .play-all-btn {
     background-color: var(--surface-color);
     color: var(--text-muted-color);
@@ -131,7 +131,7 @@ header .logo img {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    flex-grow: 1; 
+    flex-grow: 1; /* Ocupa el espacio disponible */
 }
 .audio-name {
     white-space: nowrap;
@@ -175,7 +175,7 @@ header .logo img {
 .rename-audio-btn { background-color: var(--rename-color); }
 .rename-audio-btn:hover { background-color: #1E88E5; }
 
-
+/* --- BOTÓN FLOTANTE (FAB) --- */
 .fab {
     position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
     background-color: var(--brand-color); color: white; border: none; border-radius: 50%;
@@ -184,5 +184,5 @@ header .logo img {
 }
 .fab:hover { background-color: #217891; }
 
-
+/* --- ESTADOS ADICIONALES --- */
 .player-section:not(.ready) .progress-bar { display: none; }
