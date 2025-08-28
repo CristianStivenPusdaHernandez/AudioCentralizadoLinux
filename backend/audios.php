@@ -1,21 +1,83 @@
 
 <?php
 session_start();
-require_once __DIR__ . '/auth.php';
 header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Credentials: true');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: POST, GET, DELETE, PUT, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    exit(0);
+}
+
+// Funciones de autenticación simplificadas
+function require_login() {
+    if (!isset($_SESSION['usuario_id'])) {
+        http_response_code(401);
+        echo json_encode(['error' => 'No autenticado']);
+        exit;
+    }
+}
+
+function require_permiso($permiso) {
+    require_login();
+    if (!in_array($permiso, $_SESSION['permisos'] ?? [])) {
+        http_response_code(403);
+        echo json_encode(['error' => 'Permiso denegado']);
+        exit;
+    }
+}
+
+function log_accion($conn, $accion) {
+    // Simplificado - no hacer nada por ahora
+}
 
 $host = 'localhost';
 $db = 'appestacion';
 $user = 'root';
 $pass = '';
 
-$conn = new mysqli($host, $user, $pass, $db);
-if ($conn->connect_error) {  
+try {
+    $conn = new mysqli($host, $user, $pass, $db);
+    if ($conn->connect_error) {
+        throw new Exception('Connection failed: ' . $conn->connect_error);
+    }
+    $conn->set_charset('utf8');
+    
+    // Crear tabla si no existe
+    $sql = "CREATE TABLE IF NOT EXISTS audios (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(255) NOT NULL,
+        archivo LONGBLOB NOT NULL,
+        extension VARCHAR(10) NOT NULL,
+        categoria VARCHAR(50) NOT NULL,
+        fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    $conn->query($sql);
+    
+    // Agregar datos de ejemplo si la tabla está vacía
+    $result = $conn->query("SELECT COUNT(*) as count FROM audios");
+    $count = $result->fetch_assoc()['count'];
+    if ($count == 0) {
+        $ejemplos = [
+            ['Bienvenida', 'ANUNCIOS GENERALES', 'm4a'],
+            ['Tren 253', 'ANUNCIOS DEL TREN', 'm4a'],
+            ['Tren 254', 'ANUNCIOS DEL TREN', 'm4a'],
+            ['Permanecer en sus asientos', 'ANUNCIOS GENERALES', 'm4a']
+        ];
+        
+        foreach ($ejemplos as $ejemplo) {
+            $stmt = $conn->prepare("INSERT INTO audios (nombre, archivo, extension, categoria) VALUES (?, ?, ?, ?)");
+            $archivo_vacio = ''; // Archivo vacío por ahora
+            $stmt->bind_param('ssss', $ejemplo[0], $archivo_vacio, $ejemplo[2], $ejemplo[1]);
+            $stmt->execute();
+        }
+    }
+    
+} catch (Exception $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database connection failed']);
+    echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
     exit;
 }
 
@@ -23,34 +85,67 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        // Descargar audio real
-        if (isset($_GET['action']) && $_GET['action'] === 'download' && isset($_GET['id'])) {
-            $id = intval($_GET['id']);
-            $stmt = $conn->prepare('SELECT nombre, archivo, extension FROM audios WHERE id = ?');
-            $stmt->bind_param('i', $id);
-            $stmt->execute();
-            $stmt->store_result();
-            if ($stmt->num_rows > 0) {
-                $stmt->bind_result($nombre, $archivo, $extension);
-                $stmt->fetch();
-                $mime = 'audio/mp4';
-                if ($extension === 'm4a') $mime = 'audio/x-m4a';
-                header('Content-Type: ' . $mime);
-                header('Content-Disposition: inline; filename="' . $nombre . '.' . $extension . '"');
-                echo $archivo;
-            } else {
-                http_response_code(404);
-                echo 'Audio no encontrado';
+        try {
+            // Descargar audio real
+            if (isset($_GET['action']) && $_GET['action'] === 'download' && isset($_GET['id'])) {
+                $id = intval($_GET['id']);
+                $stmt = $conn->prepare('SELECT nombre, archivo, extension FROM audios WHERE id = ?');
+                if (!$stmt) {
+                    throw new Exception('Prepare failed: ' . $conn->error);
+                }
+                $stmt->bind_param('i', $id);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                if ($row = $result->fetch_assoc()) {
+                    if (empty($row['archivo'])) {
+                        http_response_code(404);
+                        echo 'Archivo de audio vacío';
+                        exit;
+                    }
+                    
+                    // Limpiar cualquier salida previa
+                    ob_clean();
+                    
+                    // Configurar headers apropiados
+                    $mime = 'audio/mpeg';
+                    if ($row['extension'] === 'm4a') $mime = 'audio/mp4';
+                    if ($row['extension'] === 'wav') $mime = 'audio/wav';
+                    if ($row['extension'] === 'ogg') $mime = 'audio/ogg';
+                    
+                    header('Content-Type: ' . $mime);
+                    header('Content-Length: ' . strlen($row['archivo']));
+                    header('Accept-Ranges: bytes');
+                    header('Cache-Control: public, max-age=3600');
+                    
+                    echo $row['archivo'];
+                } else {
+                    http_response_code(404);
+                    echo 'Audio no encontrado';
+                }
+                exit;
             }
-            exit;
+            
+            // Listar audios
+            $result = $conn->query('SELECT id, nombre, extension, fecha_subida, categoria FROM audios ORDER BY fecha_subida DESC');
+            if (!$result) {
+                throw new Exception('Query failed: ' . $conn->error);
+            }
+            
+            $audios = [];
+            while ($row = $result->fetch_assoc()) {
+                // Usar archivos directos de la carpeta audio/ para los ejemplos
+                if (empty($row['archivo'])) {
+                    $row['url'] = 'audio/' . $row['nombre'] . '.' . $row['extension'];
+                } else {
+                    $row['url'] = 'backend/audios.php?action=download&id=' . $row['id'];
+                }
+                $audios[] = $row;
+            }
+            echo json_encode(['success' => true, 'audios' => $audios, 'count' => count($audios)]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => 'Error en GET: ' . $e->getMessage()]);
         }
-        // Listar audios
-        $result = $conn->query('SELECT id, nombre, extension, fecha_subida, categoria FROM audios ORDER BY fecha_subida DESC');
-        $audios = [];
-        while ($row = $result->fetch_assoc()) {
-            $audios[] = $row;
-        }
-        echo json_encode($audios);
         break;
 
     case 'POST':

@@ -1,504 +1,523 @@
 let userSession = null;
+const appContainer = document.querySelector('.app-container');
+const loginScreen = document.getElementById('login-screen');
 
-function showLoginModal(onSuccess) {
-    // Modal básico
-    const modalBg = document.createElement('div');
-    modalBg.style.position = 'fixed';
-    modalBg.style.top = 0;
-    modalBg.style.left = 0;
-    modalBg.style.width = '100vw';
-    modalBg.style.height = '100vh';
-    modalBg.style.background = 'rgba(0,0,0,0.5)';
-    modalBg.style.display = 'flex';
-    modalBg.style.alignItems = 'center';
-    modalBg.style.justifyContent = 'center';
-    modalBg.style.zIndex = 10000;
+// Muestra la pantalla de inicio de sesión
+const showLogin = () => {
+    loginScreen.style.display = 'flex'; // Usamos flex para centrar el contenido
+    appContainer.style.display = 'none';
+};
 
-    const modal = document.createElement('div');
-    modal.style.background = '#222';
-    modal.style.padding = '2rem';
-    modal.style.borderRadius = '12px';
-    modal.style.minWidth = '300px';
-    modal.style.color = 'white';
-    modal.innerHTML = `
-        <h3>Iniciar sesión</h3>
-        <input id="login-user" type="text" placeholder="Usuario" style="width:100%;margin:0.5rem 0;padding:0.5rem;" />
-        <input id="login-pass" type="password" placeholder="Contraseña" style="width:100%;margin:0.5rem 0;padding:0.5rem;" />
-        <div id="login-error" style="color:#e57373;margin-bottom:0.5rem;"></div>
-        <div style="margin-top:1rem;text-align:right;">
-            <button id="login-ok">Entrar</button>
-        </div>
-    `;
-    modalBg.appendChild(modal);
-    document.body.appendChild(modalBg);
+// Muestra la aplicación principal
+const showApp = (userData) => {
+    loginScreen.style.display = 'none';
+    appContainer.style.display = 'grid'; // Usamos grid para el layout principal
+    if (userData) {
+        document.getElementById('user-name').textContent = userData.usuario;
+        userSession = userData; // Guardar datos del usuario
+        
+        // Mostrar/ocultar FAB según permisos
+        const fab = document.querySelector('.fab');
+        if (userData.permisos && userData.permisos.includes('subir_audio')) {
+            fab.style.display = 'flex';
+        } else {
+            fab.style.display = 'none';
+        }
+    }
+    loadAudios(); // Cargar audios al mostrar la app
+};
 
-    modal.querySelector('#login-ok').onclick = async () => {
-        const usuario = modal.querySelector('#login-user').value.trim();
-        const password = modal.querySelector('#login-pass').value;
-        if (!usuario || !password) {
-            modal.querySelector('#login-error').textContent = 'Completa todos los campos';
+// Verifica la sesión al cargar la página
+const checkSession = async () => {
+    try {
+        const response = await fetch('backend/login.php', { 
+            method: 'GET',
+            credentials: 'include'
+        });
+        if (response.ok) {
+            userSession = await response.json();
+            showApp(userSession);
+        } else {
+            showLogin();
+        }
+    } catch (e) {
+        // En caso de error de red, muestra la pantalla de login
+        showLogin();
+        console.error('Error de red al verificar la sesión:', e);
+    }
+};
+
+// Función para cargar audios
+const loadAudios = async () => {
+    try {
+        const response = await fetch('backend/audios.php', { 
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        const responseText = await response.text();
+        console.log('Respuesta cruda del servidor:', responseText);
+        
+        if (!response.ok) {
+            console.error('Error al cargar audios:', response.status, responseText);
             return;
         }
+        
+        let data;
         try {
-            const res = await fetch('backend/login.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario, password })
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                modal.querySelector('#login-error').textContent = err.error || 'Error de autenticación';
-                return;
-            }
-            userSession = await res.json();
-            document.body.removeChild(modalBg);
-            if (onSuccess) onSuccess();
-        } catch (e) {
-            modal.querySelector('#login-error').textContent = 'Error de red';
+            data = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Error al parsear JSON:', parseError);
+            console.error('Respuesta del servidor:', responseText);
+            return;
         }
-    };
-}
+        
+        console.log('Respuesta del servidor:', data);
+        
+        const audios = data.audios || data; // Manejar ambos formatos
+        const generalGrid = document.getElementById('general-grid');
+        const trainGrid = document.getElementById('train-grid');
+        
+        generalGrid.innerHTML = ''; // Limpiar grids existentes
+        trainGrid.innerHTML = '';
 
-async function checkSession() {
-    try {
-        const res = await fetch('backend/login.php');
-        if (!res.ok) return false;
-        userSession = await res.json();
-        return true;
-    } catch {
-        return false;
+        if (!Array.isArray(audios)) {
+            console.error('Los audios no son un array:', audios);
+            return;
+        }
+
+        // Limpiar arrays de categorías
+        audiosByCategory = {};
+        
+        // Limpiar grids existentes
+        const allGrids = document.querySelectorAll('.button-grid');
+        allGrids.forEach(grid => {
+            if (grid.id !== 'general-grid' && grid.id !== 'train-grid') {
+                grid.parentElement.remove();
+            }
+        });
+        
+        // Obtener categorías únicas para el select
+        const categorias = [...new Set(audios.map(audio => audio.categoria))];
+        const categorySelect = document.getElementById('audio-category');
+        if (categorySelect) {
+            // Limpiar opciones dinámicas anteriores
+            const dynamicOptions = categorySelect.querySelectorAll('.dynamic-option');
+            dynamicOptions.forEach(option => option.remove());
+            
+            // Agregar categorías existentes
+            categorias.forEach(categoria => {
+                if (categoria !== 'ANUNCIOS GENERALES' && categoria !== 'ANUNCIOS DEL TREN') {
+                    const option = document.createElement('option');
+                    option.value = categoria;
+                    option.textContent = categoria;
+                    option.className = 'dynamic-option';
+                    categorySelect.insertBefore(option, categorySelect.lastElementChild);
+                }
+            });
+        }
+        
+        console.log(`Cargando ${audios.length} audios`);
+        audios.forEach(audio => {
+            const audioItem = document.createElement('div');
+            audioItem.classList.add('audio-item');
+            
+            // Verificar permisos para mostrar botones de edición
+            const canEdit = userSession && userSession.permisos && userSession.permisos.includes('editar_audio');
+            const canDelete = userSession && userSession.permisos && userSession.permisos.includes('eliminar_audio');
+            
+            const editButton = canEdit ? `<button class="edit-button" data-id="${audio.id}"><i class="fa-solid fa-pencil-alt"></i></button>` : '';
+            const deleteButton = canDelete ? `<button class="delete-button" data-id="${audio.id}"><i class="fa-solid fa-times"></i></button>` : '';
+            
+            audioItem.innerHTML = `
+                <button class="audio-button" data-id="${audio.id}" data-url="${audio.url}"><i class="fa-solid fa-volume-up"></i> ${audio.nombre}</button>
+                ${editButton}
+                ${deleteButton}
+            `;
+            
+            // Asignar event listeners SIEMPRE
+            const audioButton = audioItem.querySelector('.audio-button');
+            audioButton.addEventListener('click', () => playAudio(audio.id, audio.url));
+            
+            if (canEdit) {
+                const editBtn = audioItem.querySelector('.edit-button');
+                if (editBtn) editBtn.addEventListener('click', () => editAudio(audio.id));
+            }
+            
+            if (canDelete) {
+                const deleteBtn = audioItem.querySelector('.delete-button');
+                if (deleteBtn) deleteBtn.addEventListener('click', () => deleteAudio(audio.id));
+            }
+
+            // Inicializar categoría si no existe
+            if (!audiosByCategory[audio.categoria]) {
+                audiosByCategory[audio.categoria] = [];
+            }
+            audiosByCategory[audio.categoria].push(audio);
+            
+            if (audio.categoria === 'ANUNCIOS GENERALES') {
+                generalGrid.appendChild(audioItem);
+            } else if (audio.categoria === 'ANUNCIOS DEL TREN') {
+                trainGrid.appendChild(audioItem);
+            } else {
+                // Crear nueva sección para categoría personalizada
+                let customSection = document.querySelector(`[data-categoria="${audio.categoria}"]`);
+                if (!customSection) {
+                    customSection = document.createElement('div');
+                    customSection.className = 'category';
+                    customSection.setAttribute('data-categoria', audio.categoria);
+                    customSection.innerHTML = `
+                        <div class="category-header">
+                            <h3><i class="fa-solid fa-music"></i> ${audio.categoria}</h3>
+                            <button class="reproducir-todo">Reproducir Todo</button>
+                        </div>
+                        <div class="button-grid"></div>
+                    `;
+                    document.querySelector('.announcements-section').appendChild(customSection);
+                }
+                const customGrid = customSection.querySelector('.button-grid');
+                customGrid.appendChild(audioItem);
+            }
+        });
+        
+        // Agregar event listeners a los botones "Reproducir Todo"
+        document.querySelectorAll('.reproducir-todo').forEach(btn => {
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+        });
+        
+        document.querySelectorAll('.reproducir-todo').forEach(btn => {
+            const categorySection = btn.closest('.category');
+            let categoria;
+            if (categorySection.getAttribute('data-categoria')) {
+                categoria = categorySection.getAttribute('data-categoria');
+            } else if (categorySection.querySelector('h3').textContent.includes('Generales')) {
+                categoria = 'ANUNCIOS GENERALES';
+            } else if (categorySection.querySelector('h3').textContent.includes('Tren')) {
+                categoria = 'ANUNCIOS DEL TREN';
+            }
+            if (categoria) {
+                btn.addEventListener('click', () => playAllCategory(categoria));
+            }
+        });
+    } catch (error) {
+        console.error('Error al obtener audios:', error);
     }
-}
+};
 
-function hasPermiso(perm) {
-    return userSession && userSession.permisos && userSession.permisos.includes(perm);
-}
+// Variables globales para audio
+let currentAudio = null;
+let isPlaying = false;
+let audiosByCategory = {
+    'ANUNCIOS GENERALES': [],
+    'ANUNCIOS DEL TREN': []
+};
 
-document.addEventListener('DOMContentLoaded', async () => {
-    // Verificar sesión
-    const logged = await checkSession();
-    if (!logged) {
-        showLoginModal(() => location.reload());
+const updatePlayButton = () => {
+    const playButton = document.querySelector('.player-section .play-button i');
+    if (playButton) {
+        playButton.className = isPlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
+    }
+};
+
+const playAudio = (id, url) => {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+    }
+    
+    console.log('Intentando reproducir:', url);
+    currentAudio = new Audio(url);
+    
+    currentAudio.addEventListener('play', () => {
+        isPlaying = true;
+        updatePlayButton();
+        console.log('Audio iniciado');
+    });
+    
+    currentAudio.addEventListener('pause', () => {
+        isPlaying = false;
+        updatePlayButton();
+    });
+    
+    currentAudio.addEventListener('ended', () => {
+        isPlaying = false;
+        updatePlayButton();
+    });
+    
+    currentAudio.addEventListener('error', (e) => {
+        console.error('Error al cargar audio:', e);
+        console.error('URL del audio:', url);
+        alert('Error al reproducir el audio. Verifique que el archivo sea válido.');
+        isPlaying = false;
+        updatePlayButton();
+    });
+    
+    currentAudio.addEventListener('loadstart', () => {
+        console.log('Iniciando carga del audio');
+    });
+    
+    currentAudio.addEventListener('canplay', () => {
+        console.log('Audio listo para reproducir');
+    });
+    
+    currentAudio.play().catch(error => {
+        console.error('Error al reproducir:', error);
+        alert('No se pudo reproducir el audio: ' + error.message);
+    });
+};
+
+const togglePlayPause = () => {
+    if (!currentAudio) {
+        alert('No hay audio seleccionado');
         return;
     }
-    // --- 1. SELECCIÓN DE ELEMENTOS DEL DOM ---
-    const announcementsSection = document.querySelector('.announcements-section');
-    const playerSection = document.querySelector('.player-section');
-    const trackNameDisplay = playerSection.querySelector('.track-name');
-    const statusDisplay = playerSection.querySelector('.status');
-    const playButton = playerSection.querySelector('.play-button');
-    const playButtonIcon = playButton.querySelector('i');
-    const progressBar = playerSection.querySelector('.progress');
-    const progressBarContainer = playerSection.querySelector('.progress-bar');
-        const fab = document.querySelector('.fab'); 
-        // Ocultar FAB si no tiene permiso
-        if (!hasPermiso('subir_audio')) {
-            fab.style.display = 'none';
-        } else {
-            fab.addEventListener('click', () => fileInput.click());
+    
+    if (isPlaying) {
+        currentAudio.pause();
+    } else {
+        currentAudio.play();
+    }
+};
+
+const playAllCategory = async (categoria) => {
+    const audios = audiosByCategory[categoria];
+    if (!audios || audios.length === 0) {
+        alert('No hay audios en esta categoría');
+        return;
+    }
+    
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+    }
+    
+    let currentIndex = 0;
+    
+    const playNext = () => {
+        if (currentIndex < audios.length) {
+            currentAudio = new Audio(audios[currentIndex].url);
+            currentAudio.addEventListener('play', () => {
+                isPlaying = true;
+                updatePlayButton();
+            });
+            currentAudio.addEventListener('pause', () => {
+                isPlaying = false;
+                updatePlayButton();
+            });
+            currentAudio.addEventListener('ended', () => {
+                currentIndex++;
+                if (currentIndex >= audios.length) {
+                    isPlaying = false;
+                    updatePlayButton();
+                }
+                playNext();
+            });
+            currentAudio.play();
         }
-    // --- NUEVO: Selección de la barra de búsqueda ---
-    const searchInput = document.querySelector('.search-bar input');
+    };
+    
+    playNext();
+};
+const editAudio = async (id) => {
+    const newName = prompt('Ingrese el nuevo nombre:');
+    if (!newName) return;
+    
+    try {
+        const response = await fetch(`backend/audios.php?id=${id}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `nombre=${encodeURIComponent(newName)}`
+        });
+        
+        const result = await response.json();
+        if (response.ok && result.success) {
+            loadAudios();
+            alert('Audio renombrado exitosamente');
+        } else if (response.status === 403) {
+            alert('No tienes permisos para editar audios');
+        } else {
+            alert('Error al renombrar: ' + (result.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    }
+};
+
+const deleteAudio = async (id) => {
+    if (!confirm('¿Está seguro de eliminar este audio?')) return;
+    
+    try {
+        const response = await fetch(`backend/audios.php?id=${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        const result = await response.json();
+        if (response.ok && result.success) {
+            loadAudios();
+            alert('Audio eliminado exitosamente');
+        } else if (response.status === 403) {
+            alert('No tienes permisos para eliminar audios');
+        } else {
+            alert('Error al eliminar: ' + (result.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    }
+};
 
 
-    // --- 2. CONFIGURACIÓN INICIAL ---
-    const audioPlayer = new Audio();
-    let currentAudioSrc = null;
-    let currentPlaylist = [];
-    let currentPlaylistIndex = 0;
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('login-form');
+    const errorMessage = document.getElementById('mensaje-error');
+    const logoutBtn = document.getElementById('logout-btn');
+    const fab = document.querySelector('.fab');
+    const playButton = document.querySelector('.player-section .play-button');
 
-    // No hay audios predefinidos, todo viene de la base de datos
+    // Manejar el envío del formulario de inicio de sesión
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const usuario = document.getElementById('usuario').value;
+        const password = document.getElementById('password').value;
 
-    // --- 3. MANEJO DE DATOS CON BACKEND (GET) ---
-    async function getAllAudios() {
         try {
-            const response = await fetch('backend/audios.php');
-            if (!response.ok) throw new Error('Error al obtener audios');
-            const audios = await response.json();
-            // Adaptar para que coincida con el resto del código (id, name, path, categoria)
-            return audios.map(a => ({
-                id: a.id,
-                name: a.nombre,
-                path: `backend/audios.php?id=${a.id}&action=download`,
-                extension: a.extension,
-                categoria: a.categoria || 'General'
-            }));
-        } catch (e) {
-            console.error(e);
-            return [];
-        }
-    }
-
-    // saveAddedAudios ya no es necesario, se elimina
-
-    // --- 4. RENDERIZADO Y LÓGICA DE LA UI ---
-
-    function createButton(audio) {
-        const button = document.createElement('button');
-        button.className = 'announcement-button';
-        button.dataset.src = audio.path;
-        
-        const mainContent = document.createElement('div');
-        mainContent.className = 'button-main-content';
-        mainContent.innerHTML = `<i class="fa-solid fa-volume-high"></i> <span class="audio-name">${audio.name}</span>`;
-        button.appendChild(mainContent);
-
-            // Acciones solo si tiene permisos
-            if (hasPermiso('editar_audio') || hasPermiso('eliminar_audio')) {
-                const actionsContainer = document.createElement('div');
-                actionsContainer.className = 'button-actions';
-
-                if (hasPermiso('editar_audio')) {
-                    const renameBtn = document.createElement('button');
-                    renameBtn.className = 'rename-audio-btn';
-                    renameBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
-                    renameBtn.title = 'Cambiar nombre';
-                    renameBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        handleRenameAudio(audio, button);
-                    });
-                    actionsContainer.appendChild(renameBtn);
-                }
-                if (hasPermiso('eliminar_audio')) {
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-audio-btn';
-                    deleteBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
-                    deleteBtn.title = 'Eliminar este audio';
-                    deleteBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        handleDeleteAudio(audio, button);
-                    });
-                    actionsContainer.appendChild(deleteBtn);
-                }
-                button.appendChild(actionsContainer);
-            }
-
-        if (audio.isAdded) {
-            button.classList.add('added-audio');
-        }
-
-        button.addEventListener('click', () => selectAndPlayAnnouncement(button));
-        return button;
-    }
-
-    async function renderAllAudios() {
-        // Eliminar todas las categorías actuales
-        document.querySelectorAll('.category').forEach(cat => cat.remove());
-
-        // Renderizar audios de la base de datos agrupados por categoría
-        const allAudios = await getAllAudios();
-        // Agrupar por categoría
-        const categorias = {};
-        allAudios.forEach(audio => {
-            if (!categorias[audio.categoria]) categorias[audio.categoria] = [];
-            categorias[audio.categoria].push(audio);
-        });
-
-        // Renderizar cada categoría
-        const announcementsSection = document.querySelector('.announcements-section');
-        Object.entries(categorias).forEach(([cat, audios]) => {
-            let icon = '<i class="fa-solid fa-folder"></i>';
-            if (cat.toLowerCase() === 'general') icon = '<i class="fa-solid fa-star"></i>';
-            if (cat.toLowerCase() === 'tren') icon = '<i class="fa-solid fa-train"></i>';
-            const categoryDiv = document.createElement('div');
-            categoryDiv.className = 'category dynamic-category';
-            categoryDiv.innerHTML = `
-                <div class="category-header">
-                    <h3>${icon} ${cat}</h3>
-                </div>
-                <div class="button-grid"></div>`;
-            announcementsSection.appendChild(categoryDiv);
-            addPlayAllButton(categoryDiv, audios);
-            const grid = categoryDiv.querySelector('.button-grid');
-            audios.forEach(audio => grid.appendChild(createButton({ ...audio, isAdded: true })));
-        });
-    }
-    
-    function addPlayAllButton(categoryElement, audioList) {
-        const header = categoryElement.querySelector('.category-header, h3');
-        if (header.querySelector('.play-all-btn')) {
-            header.querySelector('.play-all-btn').remove();
-        }
-
-        const playAllBtn = document.createElement('button');
-        playAllBtn.className = 'play-all-btn';
-        playAllBtn.innerHTML = '<i class="fa-solid fa-play"></i> Reproducir Todo';
-        playAllBtn.title = 'Reproducir todos los audios de esta categoría';
-        
-        playAllBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handlePlayAll(audioList);
-        });
-
-        if (header.tagName === 'H3') {
-           const headerContainer = document.createElement('div');
-           headerContainer.className = 'category-header';
-           header.parentNode.insertBefore(headerContainer, header);
-           headerContainer.appendChild(header);
-           headerContainer.appendChild(playAllBtn);
-        } else {
-            header.appendChild(playAllBtn);
-        }
-    }
-
-    function selectAndPlayAnnouncement(clickedButton) {
-        currentPlaylist = [];
-        currentPlaylistIndex = 0;
-
-        document.querySelectorAll('.announcement-button').forEach(btn => btn.classList.remove('selected'));
-        clickedButton.classList.add('selected');
-
-        currentAudioSrc = clickedButton.dataset.src;
-        audioPlayer.src = currentAudioSrc;
-        audioPlayer.play();
-
-        const name = clickedButton.querySelector('.audio-name').textContent.trim();
-        trackNameDisplay.textContent = name;
-        playerSection.classList.add('ready');
-    }
-
-    // --- 5. LÓGICA DE FUNCIONALIDADES ---
-
-    function togglePlayPause() {
-        if (!currentAudioSrc) return;
-        if (audioPlayer.paused) audioPlayer.play();
-        else audioPlayer.pause();
-    }
-    
-    async function handleDeleteAudio(audio, buttonElement) {
-        const userConfirmed = confirm(`¿Deseas eliminar el audio "${audio.name}"?`);
-        if (userConfirmed) {
-            if (audio.isAdded) {
-                try {
-                    const response = await fetch(`backend/audios.php?id=${audio.id}`, {
-                        method: 'DELETE'
-                    });
-                    if (!response.ok) throw new Error('Error al eliminar');
-                } catch (e) {
-                    alert('No se pudo eliminar el audio');
-                }
-                renderAllAudios();
-            }
-
-            if(currentAudioSrc === buttonElement.dataset.src) {
-                audioPlayer.pause();
-                currentAudioSrc = null;
-                trackNameDisplay.textContent = '';
-                playerSection.classList.remove('ready');
-            }
-        }
-    }
-    
-    async function handleRenameAudio(audio, buttonElement) {
-        const currentName = audio.name;
-        const newName = prompt("Introduce el nuevo nombre para el audio:", currentName);
-
-        if (newName && newName.trim() !== '' && newName !== currentName) {
-            if (audio.isAdded) {
-                try {
-                    const params = new URLSearchParams();
-                    params.append('nombre', newName.trim());
-                    const response = await fetch(`backend/audios.php?id=${audio.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: params.toString()
-                    });
-                    if (!response.ok) throw new Error('Error al renombrar');
-                } catch (e) {
-                    alert('No se pudo renombrar el audio');
-                }
-                renderAllAudios();
-            } else {
-                for (const gridId in predefinedAudios) {
-                    const audioIndex = predefinedAudios[gridId].findIndex(a => a.id === audio.id);
-                     if (audioIndex > -1) {
-                        predefinedAudios[gridId][audioIndex].name = newName.trim();
-                        break;
-                    }
-                }
-                buttonElement.querySelector('.audio-name').textContent = newName.trim();
-                if (currentAudioSrc === buttonElement.dataset.src) {
-                    trackNameDisplay.textContent = newName.trim();
-                }
-            }
-        }
-    }
-    
-    function handlePlayAll(playlist) {
-        if (!playlist || playlist.length === 0) return;
-        currentPlaylist = playlist;
-        currentPlaylistIndex = 0;
-        playNextInPlaylist();
-    }
-
-    function playNextInPlaylist() {
-        if (currentPlaylistIndex >= currentPlaylist.length) {
-            currentPlaylist = [];
-            return;
-        }
-        const track = currentPlaylist[currentPlaylistIndex];
-        const trackPath = track.path || track.data;
-
-        document.querySelectorAll('.announcement-button').forEach(btn => btn.classList.remove('selected'));
-        const buttonToSelect = document.querySelector(`.announcement-button[data-src="${CSS.escape(trackPath)}"]`);
-        if(buttonToSelect) {
-            buttonToSelect.classList.add('selected');
-        }
-
-        currentAudioSrc = trackPath;
-        audioPlayer.src = currentAudioSrc;
-        audioPlayer.play();
-        trackNameDisplay.textContent = track.name;
-        playerSection.classList.add('ready');
-    }
-    
-    // --- NUEVO: Función para filtrar los audios según la búsqueda ---
-    function handleSearchFilter() {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        const categories = document.querySelectorAll('.category');
-
-        categories.forEach(category => {
-            const buttons = category.querySelectorAll('.announcement-button');
-            let visibleButtonsCount = 0;
-
-            buttons.forEach(button => {
-                const audioName = button.querySelector('.audio-name').textContent.toLowerCase();
-                // Si el nombre del audio incluye el término de búsqueda, se muestra
-                if (audioName.includes(searchTerm)) {
-                    button.style.display = 'flex';
-                    visibleButtonsCount++;
-                } else {
-                    // Si no, se oculta
-                    button.style.display = 'none';
-                }
+            const response = await fetch('backend/login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ usuario, password })
             });
 
-            // Si no hay botones visibles en la categoría, se oculta la categoría entera
-            if (visibleButtonsCount > 0) {
-                category.style.display = 'block';
+            const data = await response.json();
+
+            if (response.ok) {
+                userSession = data;
+                showApp(data);
+                errorMessage.textContent = '';
             } else {
-                category.style.display = 'none';
+                errorMessage.textContent = data.error || 'Credenciales incorrectas';
             }
-        });
-    }
+        } catch (error) {
+            errorMessage.textContent = 'Error de conexión. Intente de nuevo.';
+            console.error('Error:', error);
+        }
+    });
 
+    // Manejar el cierre de sesión
+    logoutBtn.addEventListener('click', async () => {
+        await fetch('backend/logout.php');
+        userSession = null;
+        showLogin();
+    });
 
-    // --- NUEVO: Selector de categoría y subida de audio ---
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'audio/mp4, .m4a';
-    fileInput.multiple = true;
-    fileInput.style.display = 'none';
+    // Inicia la verificación de la sesión al cargar la página
+    checkSession();
 
-    // Crear modal simple para elegir/crear categoría
-    function showCategoryModal(onSelect) {
-        // Obtener categorías existentes
-        getAllAudios().then(audios => {
-            const categorias = Array.from(new Set(audios.map(a => a.categoria)));
-            // Modal básico
-            const modalBg = document.createElement('div');
-            modalBg.style.position = 'fixed';
-            modalBg.style.top = 0;
-            modalBg.style.left = 0;
-            modalBg.style.width = '100vw';
-            modalBg.style.height = '100vh';
-            modalBg.style.background = 'rgba(0,0,0,0.5)';
-            modalBg.style.display = 'flex';
-            modalBg.style.alignItems = 'center';
-            modalBg.style.justifyContent = 'center';
-            modalBg.style.zIndex = 10000;
+    // Modal y formulario de audio
+    const modal = document.getElementById('audio-modal');
+    const audioForm = document.getElementById('audio-form');
+    const closeBtn = document.querySelector('.close');
+    const cancelBtn = document.querySelector('.btn-cancel');
+    const categorySelect = document.getElementById('audio-category');
+    const nuevaCategoriaGroup = document.getElementById('nueva-categoria-group');
+    const nuevaCategoriaInput = document.getElementById('nueva-categoria');
+    
+    // Mostrar/ocultar campo de nueva categoría
+    categorySelect.addEventListener('change', () => {
+        if (categorySelect.value === 'nueva') {
+            nuevaCategoriaGroup.style.display = 'block';
+            nuevaCategoriaInput.required = true;
+        } else {
+            nuevaCategoriaGroup.style.display = 'none';
+            nuevaCategoriaInput.required = false;
+            nuevaCategoriaInput.value = '';
+        }
+    });
 
-            const modal = document.createElement('div');
-            modal.style.background = '#222';
-            modal.style.padding = '2rem';
-            modal.style.borderRadius = '12px';
-            modal.style.minWidth = '300px';
-            modal.style.color = 'white';
-            modal.innerHTML = `
-                <h3>Selecciona o crea una categoría</h3>
-                <select id="cat-select" style="width:100%;margin:1rem 0;padding:0.5rem;">
-                    ${categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
-                <input id="cat-new" type="text" placeholder="Nueva categoría..." style="width:100%;padding:0.5rem;" />
-                <div style="margin-top:1rem;text-align:right;">
-                    <button id="cat-cancel" style="margin-right:1rem;">Cancelar</button>
-                    <button id="cat-ok">Aceptar</button>
-                </div>
-            `;
-            modalBg.appendChild(modal);
-            document.body.appendChild(modalBg);
+    // Botón flotante para agregar audio
+    fab.addEventListener('click', () => {
+        modal.style.display = 'flex';
+    });
 
-            modal.querySelector('#cat-cancel').onclick = () => document.body.removeChild(modalBg);
-            modal.querySelector('#cat-ok').onclick = () => {
-                let cat = modal.querySelector('#cat-new').value.trim() || modal.querySelector('#cat-select').value;
-                if (!cat) cat = 'General';
-                document.body.removeChild(modalBg);
-                onSelect(cat);
-            };
-        });
-    }
+    // Cerrar modal
+    const closeModal = () => {
+        modal.style.display = 'none';
+        audioForm.reset();
+    };
 
-    fab.addEventListener('click', () => fileInput.click());
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    
+    // Cerrar modal al hacer clic fuera
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
 
-    fileInput.addEventListener('change', async (event) => {
-        const files = event.target.files;
-        if (files.length === 0) return;
-
-        showCategoryModal(async (categoria) => {
-            for (const file of files) {
-                const formData = new FormData();
-                formData.append('audio', file);
-                formData.append('nombre', file.name.replace(/\.[^/.]+$/, ''));
-                formData.append('categoria', categoria);
-
-                try {
-                    const response = await fetch('backend/audios.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (!response.ok) throw new Error('Error al subir el audio');
-                } catch (e) {
-                    alert('No se pudo subir el audio: ' + file.name);
+    // Manejar envío del formulario de audio
+    audioForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const submitBtn = document.querySelector('.btn-submit');
+        const originalText = submitBtn.textContent;
+        
+        try {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Subiendo...';
+            
+            const formData = new FormData(audioForm);
+            
+            // Si se seleccionó nueva categoría, usar el valor del input
+            if (categorySelect.value === 'nueva') {
+                const nuevaCategoria = nuevaCategoriaInput.value.trim();
+                if (!nuevaCategoria) {
+                    alert('Por favor ingrese el nombre de la nueva categoría');
+                    return;
                 }
+                formData.set('categoria', nuevaCategoria.toUpperCase());
             }
-            fileInput.value = '';
-            renderAllAudios();
-        });
-    });
-
-    // --- 6. EVENTOS DEL REPRODUCTOR Y OTROS ---
-    audioPlayer.addEventListener('play', () => playButtonIcon.className = 'fa-solid fa-pause');
-    audioPlayer.addEventListener('pause', () => playButtonIcon.className = 'fa-solid fa-play');
-    audioPlayer.addEventListener('ended', () => {
-        playButtonIcon.className = 'fa-solid fa-play';
-        if (currentPlaylist.length > 0) {
-            currentPlaylistIndex++;
-            playNextInPlaylist();
+            
+            const response = await fetch('backend/audios.php', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+            
+            const responseText = await response.text();
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Error al parsear respuesta:', responseText);
+                alert('Error del servidor: ' + responseText.substring(0, 100));
+                return;
+            }
+            
+            if (response.ok && result.success) {
+                closeModal();
+                loadAudios(); // Recargar la lista de audios
+                alert('Audio subido exitosamente');
+            } else if (response.status === 403) {
+                alert('No tienes permisos para subir audios');
+            } else {
+                alert('Error al subir el audio: ' + (result.error || 'Error desconocido'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión al subir el audio');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
         }
     });
-    audioPlayer.addEventListener('timeupdate', () => {
-        if (audioPlayer.duration) {
-            progressBar.style.width = `${(audioPlayer.currentTime / audioPlayer.duration) * 100}%`;
-        }
-    });
 
+    // Botón de play/pause global
     playButton.addEventListener('click', togglePlayPause);
-    
-    function handleSeek(event) {
-        if (!audioPlayer.duration || isNaN(audioPlayer.duration)) {
-            return;
-        }
-        const progressBarWidth = progressBarContainer.offsetWidth;
-        const clickPositionX = event.offsetX;
-        const seekPercentage = clickPositionX / progressBarWidth;
-        audioPlayer.currentTime = seekPercentage * audioPlayer.duration;
-    }
-
-    progressBarContainer.addEventListener('click', handleSeek);
-    
-    // --- NUEVO: Evento que activa el filtro cada vez que el usuario escribe ---
-    searchInput.addEventListener('input', handleSearchFilter);
-
-    // --- 7. INICIALIZACIÓN ---
-    renderAllAudios();
 });

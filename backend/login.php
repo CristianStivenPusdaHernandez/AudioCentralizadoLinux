@@ -77,5 +77,4 @@ if ($method === 'GET') {
 
 // Cierre de conexión
 $conn->close();
-echo password_hash('estacion1234.', PASSWORD_DEFAULT);
 ?>

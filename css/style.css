@@ -1,188 +1,472 @@
-/* --- VARIABLES DE COLOR Y CONFIGURACIÓN BASE --- */
-:root {
-    --bg-color: #212121;
-    --surface-color: #424242;
-    --brand-color: #1A6075;
-    --accent-color: #D32F2F;
-    --text-color: #FFFFFF;
-    --text-muted-color: #BDBDBD;
-    --rename-color: #1976D2; /* NUEVO: Color para el botón de renombrar */
-    --font-family: 'Inter', sans-serif;
+/* css/style.css */
+
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
 body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-family: var(--font-family);
+    font-family: 'Inter', sans-serif;
+    background-color: #2c2c2c; /* Fondo oscuro */
+    color: #e0e0e0; /* Color de texto claro */
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    padding: 1rem;
+    overflow: hidden; /* Evita scrolls inesperados */
 }
 
-.app-container {
-    width: 100%;
-    max-width: 600px; /* --- CAMBIO: Aumentado de 400px a 480px --- */
-    background-color: #2a2a2a;
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-/* --- ENCABEZADO Y LOGO --- */
-header {
+/* Contenedor de Login */
+.login-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); /* Fondo oscuro con transparencia */
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.login-container {
+    background: #333; /* Fondo más claro para el formulario */
+    padding: 2.5rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.login-container h2 {
+    color: #f0f0f0;
     margin-bottom: 2rem;
-}
-header .logo img {
-    height: 40px;
-    width: auto;
+    font-size: 1.8rem;
 }
 
-/* --- REPRODUCTOR --- */
+.login-container input {
+    width: calc(100% - 20px);
+    padding: 12px 10px;
+    margin-bottom: 1rem;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background-color: #444;
+    color: #f0f0f0;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.login-container input::placeholder {
+    color: #bbb;
+}
+
+.login-container input:focus {
+    border-color: #1976D2;
+    outline: none;
+}
+
+.login-container button {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #1976D2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-container button:hover {
+    background-color: #155bb5;
+}
+
+#mensaje-error {
+    color: #ff5252;
+    margin-top: 1rem;
+    font-weight: bold;
+}
+
+/* Estilos para la aplicación principal */
+.app-container {
+    display: grid; /* Usar grid para el layout general */
+    grid-template-rows: auto 1fr auto; /* Header, Main, Footer (si lo hubiera) */
+    grid-template-columns: 1fr; /* Una sola columna principal */
+    width: 100%;
+    max-width: 1200px; /* Ancho máximo para el contenido */
+    height: 100vh;
+    padding: 20px;
+    gap: 20px;
+    background-color: #1e1e1e; /* Fondo de la app */
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden; /* Para manejar scrolls internos */
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #444; /* Separador */
+}
+
+.logo img {
+    height: 40px; /* Ajusta el tamaño del logo */
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ccc;
+}
+
+.user-info #user-name {
+    font-weight: bold;
+    color: #f0f0f0;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: #ccc;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.icon-button:hover {
+    color: #fff;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr; /* Una columna para secciones */
+    gap: 20px;
+    padding: 20px 0;
+    overflow-y: auto; /* Permite scroll solo en el contenido principal */
+}
+
 .player-section {
-    background-color: var(--surface-color); padding: 1rem; border-radius: 12px;
-    display: flex; gap: 1rem; align-items: center; margin-bottom: 2rem;
+    background-color: #333;
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 150px; /* Altura mínima del reproductor */
 }
-.track-info { flex-grow: 1; }
-.status { font-size: 0.8rem; color: var(--text-muted-color); margin-bottom: 0.25rem; display: flex; align-items: center; }
-.track-name { font-weight: 500; min-height: 1.2em; }
-.live-indicator {
-    width: 8px; height: 8px; background-color: var(--accent-color);
-    border-radius: 50%; margin-right: 8px; animation: pulse 1.5s infinite;
-}
-@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
 
-/* --- CAMBIO: Se añadió cursor: pointer --- */
-.progress-bar { 
-    width: 100%; height: 6px; background-color: #616161; border-radius: 3px; 
-    margin-top: 0.75rem; overflow: hidden; cursor: pointer; 
+.player-card {
+    background-color: #444; /* Fondo del área del botón de play */
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 300px; /* Ancho máximo para el reproductor */
 }
-.progress { height: 100%; background-color: var(--accent-color); border-radius: 3px; }
-.controls .play-button {
-    width: 60px; height: 60px; background-color: var(--accent-color);
-    border: none; border-radius: 50%; color: white; font-size: 1.5rem;
-    display: flex; justify-content: center; align-items: center;
-    cursor: pointer; transition: background-color 0.2s;
-}
-.play-button:hover { background-color: #E53935; }
 
-/* --- LISTA DE ANUNCIOS --- */
+.play-button.large {
+    background-color: #ff0000; /* Rojo vibrante */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    font-size: 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.play-button.large:hover {
+    background-color: #cc0000;
+    transform: scale(1.05);
+}
+
+.announcements-section {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 12px;
+}
+
 .search-bar {
-    display: flex; align-items: center; background-color: var(--surface-color);
-    padding: 0.75rem; border-radius: 8px; margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    background-color: #444;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 20px;
 }
-.search-bar i { color: var(--text-muted-color); margin-right: 0.75rem; }
-.search-bar input { background: none; border: none; color: var(--text-color); width: 100%; font-size: 1rem; }
-.search-bar input:focus { outline: none; }
 
-/* --- MODIFICADO: Estructura de la cabecera de categoría --- */
+.search-bar i {
+    color: #bbb;
+    margin-right: 10px;
+}
+
+.search-bar input {
+    flex-grow: 1;
+    border: none;
+    background: none;
+    color: #f0f0f0;
+    font-size: 1rem;
+    padding: 5px 0;
+}
+
+.search-bar input:focus {
+    outline: none;
+}
+
+.category {
+    margin-bottom: 25px;
+}
+
 .category-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
 }
-.category h3 {
-    font-size: 0.9rem; color: var(--text-muted-color);
-    text-transform: uppercase; letter-spacing: 1px;
-    margin: 0; /* Reseteamos margen por el nuevo contenedor */
-}
-.category h3 i { margin-right: 8px; color: var(--brand-color); }
 
-/* --- NUEVO: Botón de Reproducir Todo --- */
-.play-all-btn {
-    background-color: var(--surface-color);
-    color: var(--text-muted-color);
-    border: none;
-    border-radius: 20px;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
+.category-header h3 {
+    color: #f0f0f0;
+    font-size: 1.3rem;
     display: flex;
     align-items: center;
-    gap: 6px;
-}
-.play-all-btn:hover {
-    background-color: var(--brand-color);
-    color: var(--text-color);
 }
 
-.button-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; margin-bottom: 2rem; }
-
-/* --- MODIFICADO: Botón de anuncio --- */
-.announcement-button {
-    background-color: var(--surface-color); color: var(--text-color);
-    border: none; border-radius: 8px; padding: 0; /* Padding se maneja internamente ahora */
-    font-family: var(--font-family); cursor: pointer;
-    text-align: left; transition: background-color 0.2s, transform 0.1s;
-    display: flex; align-items: stretch; /* Para que los hijos ocupen toda la altura */
-    position: relative;
-    overflow: hidden;
-}
-.button-main-content {
-    padding: 1.25rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-grow: 1; /* Ocupa el espacio disponible */
-}
-.audio-name {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.announcement-button:hover { background-color: #616161; }
-.announcement-button:active { transform: scale(0.97); }
-.announcement-button.selected { background-color: var(--brand-color); color: white; font-weight: 700; }
-
-/* --- NUEVO Y MODIFICADO: Botones de acción (Eliminar, Renombrar) --- */
-.button-actions {
-    position: absolute;
-    top: 0;
-    right: 0;
-    height: 100%;
-    display: flex;
-    transform: translateX(100%); /* Oculto por defecto */
-    transition: transform 0.2s ease-in-out;
-}
-.announcement-button:hover .button-actions {
-    transform: translateX(0); /* Aparece al hacer hover */
+.category-header h3 i {
+    margin-right: 8px;
+    color: #ffc107; /* Color para los iconos de categoría */
 }
 
-.delete-audio-btn, .rename-audio-btn {
-    width: 40px;
-    height: 100%;
+.category-header .reproducir-todo {
+    background-color: #007bff; /* Color azul */
     color: white;
     border: none;
+    border-radius: 6px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.category-header .reproducir-todo:hover {
+    background-color: #0056b3;
+}
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Columnas responsivas */
+    gap: 15px;
+}
+
+.audio-item {
+    background-color: #444;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.audio-button {
+    flex-grow: 1;
+    background: none;
+    border: none;
+    color: #f0f0f0;
+    font-size: 1rem;
+    text-align: left;
+    padding: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    transition: background-color 0.2s;
 }
 
-.delete-audio-btn { background-color: var(--accent-color); }
-.delete-audio-btn:hover { background-color: #E53935; }
+.audio-button i {
+    margin-right: 10px;
+    color: #1976D2; /* Icono de volumen */
+}
 
-.rename-audio-btn { background-color: var(--rename-color); }
-.rename-audio-btn:hover { background-color: #1E88E5; }
+.audio-item .edit-button,
+.audio-item .delete-button {
+    background: none;
+    border: none;
+    color: #bbb;
+    font-size: 0.9rem;
+    margin-left: 8px;
+    padding: 5px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
 
-/* --- BOTÓN FLOTANTE (FAB) --- */
+.audio-item .edit-button:hover {
+    color: #ffc107; /* Amarillo para editar */
+}
+
+.audio-item .delete-button:hover {
+    color: #ff5252; /* Rojo para eliminar */
+}
+
 .fab {
-    position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
-    background-color: var(--brand-color); color: white; border: none; border-radius: 50%;
-    font-size: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.4); cursor: pointer;
-    transition: background-color 0.2s;
+    position: fixed;
+    bottom: 30px;
+    right: 0px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #00bcd4; /* Azul cian */
+    color: white;
+    font-size: 2rem;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
-.fab:hover { background-color: #217891; }
 
-/* --- ESTADOS ADICIONALES --- */
-.player-section:not(.ready) .progress-bar { display: none; }
+.fab:hover {
+    background-color: #0097a7;
+    transform: scale(1.05);
+}
+
+/* Estilos para el modal */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #333;
+    border-radius: 12px;
+    padding: 0;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #444;
+}
+
+.modal-header h3 {
+    color: #f0f0f0;
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close {
+    color: #bbb;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover {
+    color: #fff;
+}
+
+#audio-form {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #f0f0f0;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background-color: #444;
+    color: #f0f0f0;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #1976D2;
+    outline: none;
+}
+
+.form-group input[type="file"] {
+    padding: 8px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn-cancel,
+.btn-submit {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-cancel {
+    background-color: #666;
+    color: #f0f0f0;
+}
+
+.btn-cancel:hover {
+    background-color: #555;
+}
+
+.btn-submit {
+    background-color: #1976D2;
+    color: white;
+}
+
+.btn-submit:hover {
+    background-color: #155bb5;
+}
+
+.btn-submit:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}

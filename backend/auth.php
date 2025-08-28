@@ -31,3 +31,4 @@ function log_accion($conn, $accion) {
         $stmt->execute();
     }
 }
+?>
