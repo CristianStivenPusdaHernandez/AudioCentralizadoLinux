@@ -1,4 +1,7 @@
+
 <?php
+session_start();
+require_once __DIR__ . '/auth.php';
 header('Access-Control-Allow-Origin: *');
 header('Content-Type: application/json');
 header('Access-Control-Allow-Methods: POST, GET, DELETE, PUT, OPTIONS');
@@ -51,7 +54,7 @@ switch ($method) {
         break;
 
     case 'POST':
-        // Subir audio
+        require_permiso('subir_audio');
         if (!isset($_FILES['audio']) || !isset($_POST['nombre']) || !isset($_POST['categoria'])) {
             http_response_code(400);
             echo json_encode(['error' => 'Faltan datos']);
@@ -64,6 +67,7 @@ switch ($method) {
         $stmt = $conn->prepare('INSERT INTO audios (nombre, archivo, extension, categoria) VALUES (?, ?, ?, ?)');
         $stmt->bind_param('ssss', $nombre, $archivo, $extension, $categoria);
         if ($stmt->execute()) {
+            log_accion($conn, 'Subió audio: ' . $nombre);
             echo json_encode(['success' => true, 'id' => $stmt->insert_id]);
         } else {
             http_response_code(500);
@@ -72,7 +76,7 @@ switch ($method) {
         break;
 
     case 'DELETE':
-        // Eliminar audio
+        require_permiso('eliminar_audio');
         if (!isset($_GET['id'])) {
             http_response_code(400);
             echo json_encode(['error' => 'Falta el id']);
@@ -82,6 +86,7 @@ switch ($method) {
         $stmt = $conn->prepare('DELETE FROM audios WHERE id = ?');
         $stmt->bind_param('i', $id);
         if ($stmt->execute()) {
+            log_accion($conn, 'Eliminó audio ID: ' . $id);
             echo json_encode(['success' => true]);
         } else {
             http_response_code(500);
@@ -90,7 +95,7 @@ switch ($method) {
         break;
 
     case 'PUT':
-        // Renombrar audio
+        require_permiso('editar_audio');
         parse_str(file_get_contents('php://input'), $put_vars);
         if (!isset($_GET['id']) || !isset($put_vars['nombre'])) {
             http_response_code(400);
@@ -102,6 +107,7 @@ switch ($method) {
         $stmt = $conn->prepare('UPDATE audios SET nombre = ? WHERE id = ?');
         $stmt->bind_param('si', $nuevo_nombre, $id);
         if ($stmt->execute()) {
+            log_accion($conn, 'Renombró audio ID: ' . $id . ' a ' . $nuevo_nombre);
             echo json_encode(['success' => true]);
         } else {
             http_response_code(500);

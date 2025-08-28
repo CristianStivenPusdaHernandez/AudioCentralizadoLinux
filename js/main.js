@@ -1,4 +1,86 @@
-document.addEventListener('DOMContentLoaded', () => {
+let userSession = null;
+
+function showLoginModal(onSuccess) {
+    // Modal básico
+    const modalBg = document.createElement('div');
+    modalBg.style.position = 'fixed';
+    modalBg.style.top = 0;
+    modalBg.style.left = 0;
+    modalBg.style.width = '100vw';
+    modalBg.style.height = '100vh';
+    modalBg.style.background = 'rgba(0,0,0,0.5)';
+    modalBg.style.display = 'flex';
+    modalBg.style.alignItems = 'center';
+    modalBg.style.justifyContent = 'center';
+    modalBg.style.zIndex = 10000;
+
+    const modal = document.createElement('div');
+    modal.style.background = '#222';
+    modal.style.padding = '2rem';
+    modal.style.borderRadius = '12px';
+    modal.style.minWidth = '300px';
+    modal.style.color = 'white';
+    modal.innerHTML = `
+        <h3>Iniciar sesión</h3>
+        <input id="login-user" type="text" placeholder="Usuario" style="width:100%;margin:0.5rem 0;padding:0.5rem;" />
+        <input id="login-pass" type="password" placeholder="Contraseña" style="width:100%;margin:0.5rem 0;padding:0.5rem;" />
+        <div id="login-error" style="color:#e57373;margin-bottom:0.5rem;"></div>
+        <div style="margin-top:1rem;text-align:right;">
+            <button id="login-ok">Entrar</button>
+        </div>
+    `;
+    modalBg.appendChild(modal);
+    document.body.appendChild(modalBg);
+
+    modal.querySelector('#login-ok').onclick = async () => {
+        const usuario = modal.querySelector('#login-user').value.trim();
+        const password = modal.querySelector('#login-pass').value;
+        if (!usuario || !password) {
+            modal.querySelector('#login-error').textContent = 'Completa todos los campos';
+            return;
+        }
+        try {
+            const res = await fetch('backend/login.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password })
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                modal.querySelector('#login-error').textContent = err.error || 'Error de autenticación';
+                return;
+            }
+            userSession = await res.json();
+            document.body.removeChild(modalBg);
+            if (onSuccess) onSuccess();
+        } catch (e) {
+            modal.querySelector('#login-error').textContent = 'Error de red';
+        }
+    };
+}
+
+async function checkSession() {
+    try {
+        const res = await fetch('backend/login.php');
+        if (!res.ok) return false;
+        userSession = await res.json();
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function hasPermiso(perm) {
+    return userSession && userSession.permisos && userSession.permisos.includes(perm);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar sesión
+    const logged = await checkSession();
+    if (!logged) {
+        showLoginModal(() => location.reload());
+        return;
+    }
     // --- 1. SELECCIÓN DE ELEMENTOS DEL DOM ---
     const announcementsSection = document.querySelector('.announcements-section');
     const playerSection = document.querySelector('.player-section');
@@ -8,7 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const playButtonIcon = playButton.querySelector('i');
     const progressBar = playerSection.querySelector('.progress');
     const progressBarContainer = playerSection.querySelector('.progress-bar');
-    const fab = document.querySelector('.fab');
+        const fab = document.querySelector('.fab'); 
+        // Ocultar FAB si no tiene permiso
+        if (!hasPermiso('subir_audio')) {
+            fab.style.display = 'none';
+        } else {
+            fab.addEventListener('click', () => fileInput.click());
+        }
     // --- NUEVO: Selección de la barra de búsqueda ---
     const searchInput = document.querySelector('.search-bar input');
 
@@ -55,30 +143,35 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent.innerHTML = `<i class="fa-solid fa-volume-high"></i> <span class="audio-name">${audio.name}</span>`;
         button.appendChild(mainContent);
 
-        const actionsContainer = document.createElement('div');
-        actionsContainer.className = 'button-actions';
+            // Acciones solo si tiene permisos
+            if (hasPermiso('editar_audio') || hasPermiso('eliminar_audio')) {
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'button-actions';
 
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'rename-audio-btn';
-        renameBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
-        renameBtn.title = 'Cambiar nombre';
-        renameBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleRenameAudio(audio, button);
-        });
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-audio-btn';
-        deleteBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
-        deleteBtn.title = 'Eliminar este audio';
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            handleDeleteAudio(audio, button);
-        });
-
-        actionsContainer.appendChild(renameBtn);
-        actionsContainer.appendChild(deleteBtn);
-        button.appendChild(actionsContainer);
+                if (hasPermiso('editar_audio')) {
+                    const renameBtn = document.createElement('button');
+                    renameBtn.className = 'rename-audio-btn';
+                    renameBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
+                    renameBtn.title = 'Cambiar nombre';
+                    renameBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleRenameAudio(audio, button);
+                    });
+                    actionsContainer.appendChild(renameBtn);
+                }
+                if (hasPermiso('eliminar_audio')) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-audio-btn';
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
+                    deleteBtn.title = 'Eliminar este audio';
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleDeleteAudio(audio, button);
+                    });
+                    actionsContainer.appendChild(deleteBtn);
+                }
+                button.appendChild(actionsContainer);
+            }
 
         if (audio.isAdded) {
             button.classList.add('added-audio');
