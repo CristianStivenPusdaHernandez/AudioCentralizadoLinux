@@ -42,7 +42,7 @@ switch ($method) {
             exit;
         }
         // Listar audios
-        $result = $conn->query('SELECT id, nombre, extension, fecha_subida FROM audios ORDER BY fecha_subida DESC');
+        $result = $conn->query('SELECT id, nombre, extension, fecha_subida, categoria FROM audios ORDER BY fecha_subida DESC');
         $audios = [];
         while ($row = $result->fetch_assoc()) {
             $audios[] = $row;
@@ -52,16 +52,17 @@ switch ($method) {
 
     case 'POST':
         // Subir audio
-        if (!isset($_FILES['audio']) || !isset($_POST['nombre'])) {
+        if (!isset($_FILES['audio']) || !isset($_POST['nombre']) || !isset($_POST['categoria'])) {
             http_response_code(400);
             echo json_encode(['error' => 'Faltan datos']);
             exit;
         }
         $nombre = $conn->real_escape_string($_POST['nombre']);
+        $categoria = $conn->real_escape_string($_POST['categoria']);
         $extension = pathinfo($_FILES['audio']['name'], PATHINFO_EXTENSION);
         $archivo = file_get_contents($_FILES['audio']['tmp_name']);
-        $stmt = $conn->prepare('INSERT INTO audios (nombre, archivo, extension) VALUES (?, ?, ?)');
-        $stmt->bind_param('sss', $nombre, $archivo, $extension);
+        $stmt = $conn->prepare('INSERT INTO audios (nombre, archivo, extension, categoria) VALUES (?, ?, ?, ?)');
+        $stmt->bind_param('ssss', $nombre, $archivo, $extension, $categoria);
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'id' => $stmt->insert_id]);
         } else {

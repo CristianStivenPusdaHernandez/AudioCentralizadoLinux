@@ -19,35 +19,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPlaylist = [];
     let currentPlaylistIndex = 0;
 
-    const predefinedAudios = {
-        'general-grid': [
-            { id: 'predefined-1', name: 'Bienvenida', path: 'audio/Bienvenida.m4a' },
-            { id: 'predefined-2', name: 'Permanecer Asientos', path: 'audio/Permanecer en sus asientos.m4a' }
-        ],
-        'train-grid': [
-            { id: 'predefined-3', name: 'Autoferro 26', path: 'audio/Autoferro 26.m4a' },
-            { id: 'predefined-4', name: 'Tren 253', path: 'audio/Tren 253.m4a' },
-            { id: 'predefined-5', name: 'Tren 254', path: 'audio/Tren 254.m4a' },
-            { id: 'predefined-6', name: 'Tren 255', path: 'audio/Tren 255.m4a' },
-            { id: 'predefined-7', name: 'Tren 256', path: 'audio/Tren 256.m4a' },
-            { id: 'predefined-8', name: 'Tren 257', path: 'audio/Tren 257.m4a' },
-            { id: 'predefined-9', name: 'Tren 258', path: 'audio/Tren 258.m4a' },
-            { id: 'predefined-10', name: 'Tren 577', path: 'audio/Tren 577.m4a' }
-        ]
-    };
+    // No hay audios predefinidos, todo viene de la base de datos
 
     // --- 3. MANEJO DE DATOS CON BACKEND (GET) ---
-    async function getAddedAudios() {
+    async function getAllAudios() {
         try {
             const response = await fetch('backend/audios.php');
             if (!response.ok) throw new Error('Error al obtener audios');
             const audios = await response.json();
-            // Adaptar para que coincida con el resto del código (id, name, path)
+            // Adaptar para que coincida con el resto del código (id, name, path, categoria)
             return audios.map(a => ({
                 id: a.id,
                 name: a.nombre,
                 path: `backend/audios.php?id=${a.id}&action=download`,
-                extension: a.extension
+                extension: a.extension,
+                categoria: a.categoria || 'General'
             }));
         } catch (e) {
             console.error(e);
@@ -103,45 +89,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function renderAllAudios() {
-        for (const gridId in predefinedAudios) {
-            const grid = document.getElementById(gridId);
-            const category = grid.parentElement;
-            grid.innerHTML = '';
-            addPlayAllButton(category, predefinedAudios[gridId]);
-            predefinedAudios[gridId].forEach(audio => {
-                grid.appendChild(createButton(audio));
-            });
-        }
+        // Eliminar todas las categorías actuales
+        document.querySelectorAll('.category').forEach(cat => cat.remove());
 
-        const addedAudios = await getAddedAudios();
-        let addedCategory = document.querySelector('#added-audio-category');
+        // Renderizar audios de la base de datos agrupados por categoría
+        const allAudios = await getAllAudios();
+        // Agrupar por categoría
+        const categorias = {};
+        allAudios.forEach(audio => {
+            if (!categorias[audio.categoria]) categorias[audio.categoria] = [];
+            categorias[audio.categoria].push(audio);
+        });
 
-        if (addedAudios.length === 0 && addedCategory) {
-            addedCategory.remove();
-            return;
-        }
-
-        if (addedAudios.length > 0) {
-            if (!addedCategory) {
-                addedCategory = document.createElement('div');
-                addedCategory.className = 'category';
-                addedCategory.id = 'added-audio-category';
-                addedCategory.innerHTML = `
-                    <div class="category-header">
-                        <h3><i class="fa-solid fa-upload"></i> Audios Añadidos</h3>
-                    </div>
-                    <div class="button-grid" id="added-audio-grid"></div>`;
-                announcementsSection.appendChild(addedCategory);
-            }
-
-            addPlayAllButton(addedCategory, addedAudios);
-
-            const addedGrid = document.querySelector('#added-audio-grid');
-            addedGrid.innerHTML = '';
-            addedAudios.forEach(audio => {
-                addedGrid.appendChild(createButton({ ...audio, isAdded: true }));
-            });
-        }
+        // Renderizar cada categoría
+        const announcementsSection = document.querySelector('.announcements-section');
+        Object.entries(categorias).forEach(([cat, audios]) => {
+            let icon = '<i class="fa-solid fa-folder"></i>';
+            if (cat.toLowerCase() === 'general') icon = '<i class="fa-solid fa-star"></i>';
+            if (cat.toLowerCase() === 'tren') icon = '<i class="fa-solid fa-train"></i>';
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'category dynamic-category';
+            categoryDiv.innerHTML = `
+                <div class="category-header">
+                    <h3>${icon} ${cat}</h3>
+                </div>
+                <div class="button-grid"></div>`;
+            announcementsSection.appendChild(categoryDiv);
+            addPlayAllButton(categoryDiv, audios);
+            const grid = categoryDiv.querySelector('.button-grid');
+            audios.forEach(audio => grid.appendChild(createButton({ ...audio, isAdded: true })));
+        });
     }
     
     function addPlayAllButton(categoryElement, audioList) {
@@ -313,11 +290,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // --- NUEVO: Selector de categoría y subida de audio ---
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'audio/mp4, .m4a';
     fileInput.multiple = true;
     fileInput.style.display = 'none';
+
+    // Crear modal simple para elegir/crear categoría
+    function showCategoryModal(onSelect) {
+        // Obtener categorías existentes
+        getAllAudios().then(audios => {
+            const categorias = Array.from(new Set(audios.map(a => a.categoria)));
+            // Modal básico
+            const modalBg = document.createElement('div');
+            modalBg.style.position = 'fixed';
+            modalBg.style.top = 0;
+            modalBg.style.left = 0;
+            modalBg.style.width = '100vw';
+            modalBg.style.height = '100vh';
+            modalBg.style.background = 'rgba(0,0,0,0.5)';
+            modalBg.style.display = 'flex';
+            modalBg.style.alignItems = 'center';
+            modalBg.style.justifyContent = 'center';
+            modalBg.style.zIndex = 10000;
+
+            const modal = document.createElement('div');
+            modal.style.background = '#222';
+            modal.style.padding = '2rem';
+            modal.style.borderRadius = '12px';
+            modal.style.minWidth = '300px';
+            modal.style.color = 'white';
+            modal.innerHTML = `
+                <h3>Selecciona o crea una categoría</h3>
+                <select id="cat-select" style="width:100%;margin:1rem 0;padding:0.5rem;">
+                    ${categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
+                </select>
+                <input id="cat-new" type="text" placeholder="Nueva categoría..." style="width:100%;padding:0.5rem;" />
+                <div style="margin-top:1rem;text-align:right;">
+                    <button id="cat-cancel" style="margin-right:1rem;">Cancelar</button>
+                    <button id="cat-ok">Aceptar</button>
+                </div>
+            `;
+            modalBg.appendChild(modal);
+            document.body.appendChild(modalBg);
+
+            modal.querySelector('#cat-cancel').onclick = () => document.body.removeChild(modalBg);
+            modal.querySelector('#cat-ok').onclick = () => {
+                let cat = modal.querySelector('#cat-new').value.trim() || modal.querySelector('#cat-select').value;
+                if (!cat) cat = 'General';
+                document.body.removeChild(modalBg);
+                onSelect(cat);
+            };
+        });
+    }
 
     fab.addEventListener('click', () => fileInput.click());
 
@@ -325,23 +351,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const files = event.target.files;
         if (files.length === 0) return;
 
-        for (const file of files) {
-            const formData = new FormData();
-            formData.append('audio', file);
-            formData.append('nombre', file.name.replace(/\.[^/.]+$/, ''));
+        showCategoryModal(async (categoria) => {
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('audio', file);
+                formData.append('nombre', file.name.replace(/\.[^/.]+$/, ''));
+                formData.append('categoria', categoria);
 
-            try {
-                const response = await fetch('backend/audios.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                if (!response.ok) throw new Error('Error al subir el audio');
-            } catch (e) {
-                alert('No se pudo subir el audio: ' + file.name);
+                try {
+                    const response = await fetch('backend/audios.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) throw new Error('Error al subir el audio');
+                } catch (e) {
+                    alert('No se pudo subir el audio: ' + file.name);
+                }
             }
-        }
-        fileInput.value = '';
-        renderAllAudios();
+            fileInput.value = '';
+            renderAllAudios();
+        });
     });
 
     // --- 6. EVENTOS DEL REPRODUCTOR Y OTROS ---
