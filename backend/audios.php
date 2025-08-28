@@ -133,8 +133,9 @@ switch ($method) {
             
             $audios = [];
             while ($row = $result->fetch_assoc()) {
-                // Usar archivos directos de la carpeta audio/ para los ejemplos
-                if (empty($row['archivo'])) {
+                // Verificar si el archivo físico existe
+                $archivo_fisico = '../audio/' . $row['nombre'] . '.' . $row['extension'];
+                if (empty($row['archivo']) && file_exists($archivo_fisico)) {
                     $row['url'] = 'audio/' . $row['nombre'] . '.' . $row['extension'];
                 } else {
                     $row['url'] = 'backend/audios.php?action=download&id=' . $row['id'];
