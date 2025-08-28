@@ -36,14 +36,26 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    // --- 3. MANEJO DE DATOS CON LOCALSTORAGE ---
-    function getAddedAudios() {
-        return JSON.parse(localStorage.getItem('addedAudios')) || [];
+    // --- 3. MANEJO DE DATOS CON BACKEND (GET) ---
+    async function getAddedAudios() {
+        try {
+            const response = await fetch('backend/audios.php');
+            if (!response.ok) throw new Error('Error al obtener audios');
+            const audios = await response.json();
+            // Adaptar para que coincida con el resto del código (id, name, path)
+            return audios.map(a => ({
+                id: a.id,
+                name: a.nombre,
+                path: `backend/audios.php?id=${a.id}&action=download`,
+                extension: a.extension
+            }));
+        } catch (e) {
+            console.error(e);
+            return [];
+        }
     }
 
-    function saveAddedAudios(audios) {
-        localStorage.setItem('addedAudios', JSON.stringify(audios));
-    }
+    // saveAddedAudios ya no es necesario, se elimina
 
     // --- 4. RENDERIZADO Y LÓGICA DE LA UI ---
 
@@ -90,20 +102,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return button;
     }
 
-    function renderAllAudios() {
+    async function renderAllAudios() {
         for (const gridId in predefinedAudios) {
             const grid = document.getElementById(gridId);
             const category = grid.parentElement;
             grid.innerHTML = '';
-            
             addPlayAllButton(category, predefinedAudios[gridId]);
-
             predefinedAudios[gridId].forEach(audio => {
                 grid.appendChild(createButton(audio));
             });
         }
-        
-        const addedAudios = getAddedAudios();
+
+        const addedAudios = await getAddedAudios();
         let addedCategory = document.querySelector('#added-audio-category');
 
         if (addedAudios.length === 0 && addedCategory) {
@@ -123,13 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="button-grid" id="added-audio-grid"></div>`;
                 announcementsSection.appendChild(addedCategory);
             }
-            
-            addPlayAllButton(addedCategory, addedAudios.map(a => ({...a, path: a.data})));
+
+            addPlayAllButton(addedCategory, addedAudios);
 
             const addedGrid = document.querySelector('#added-audio-grid');
             addedGrid.innerHTML = '';
             addedAudios.forEach(audio => {
-                addedGrid.appendChild(createButton({ ...audio, path: audio.data, isAdded: true }));
+                addedGrid.appendChild(createButton({ ...audio, isAdded: true }));
             });
         }
     }
@@ -185,14 +195,19 @@ document.addEventListener('DOMContentLoaded', () => {
         else audioPlayer.pause();
     }
     
-    function handleDeleteAudio(audio, buttonElement) {
+    async function handleDeleteAudio(audio, buttonElement) {
         const userConfirmed = confirm(`¿Deseas eliminar el audio "${audio.name}"?`);
-        
         if (userConfirmed) {
             if (audio.isAdded) {
-                let addedAudios = getAddedAudios();
-                const filteredAudios = addedAudios.filter(a => a.id !== audio.id);
-                saveAddedAudios(filteredAudios);
+                try {
+                    const response = await fetch(`backend/audios.php?id=${audio.id}`, {
+                        method: 'DELETE'
+                    });
+                    if (!response.ok) throw new Error('Error al eliminar');
+                } catch (e) {
+                    alert('No se pudo eliminar el audio');
+                }
+                renderAllAudios();
             }
 
             if(currentAudioSrc === buttonElement.dataset.src) {
@@ -201,31 +216,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 trackNameDisplay.textContent = '';
                 playerSection.classList.remove('ready');
             }
-
-            const grid = buttonElement.parentElement;
-            buttonElement.remove();
-
-            if (grid.children.length === 0) {
-                const category = grid.parentElement;
-                if(category.id === 'added-audio-category'){
-                    category.remove();
-                }
-            }
         }
     }
     
-    function handleRenameAudio(audio, buttonElement) {
+    async function handleRenameAudio(audio, buttonElement) {
         const currentName = audio.name;
         const newName = prompt("Introduce el nuevo nombre para el audio:", currentName);
 
         if (newName && newName.trim() !== '' && newName !== currentName) {
             if (audio.isAdded) {
-                let addedAudios = getAddedAudios(); 
-                const audioIndex = addedAudios.findIndex(a => a.id === audio.id);
-                if (audioIndex > -1) {
-                    addedAudios[audioIndex].name = newName.trim();
-                    saveAddedAudios(addedAudios);
+                try {
+                    const params = new URLSearchParams();
+                    params.append('nombre', newName.trim());
+                    const response = await fetch(`backend/audios.php?id=${audio.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: params.toString()
+                    });
+                    if (!response.ok) throw new Error('Error al renombrar');
+                } catch (e) {
+                    alert('No se pudo renombrar el audio');
                 }
+                renderAllAudios();
             } else {
                 for (const gridId in predefinedAudios) {
                     const audioIndex = predefinedAudios[gridId].findIndex(a => a.id === audio.id);
@@ -234,10 +246,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         break;
                     }
                 }
-            }
-            buttonElement.querySelector('.audio-name').textContent = newName.trim();
-            if (currentAudioSrc === buttonElement.dataset.src) {
-                trackNameDisplay.textContent = newName.trim();
+                buttonElement.querySelector('.audio-name').textContent = newName.trim();
+                if (currentAudioSrc === buttonElement.dataset.src) {
+                    trackNameDisplay.textContent = newName.trim();
+                }
             }
         }
     }
@@ -309,26 +321,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fab.addEventListener('click', () => fileInput.click());
 
-    fileInput.addEventListener('change', (event) => {
+    fileInput.addEventListener('change', async (event) => {
         const files = event.target.files;
         if (files.length === 0) return;
 
         for (const file of files) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const newAudio = {
-                    id: Date.now() + file.name,
-                    name: file.name.replace(/\.m4a$/i, ''),
-                    data: e.target.result
-                };
-                const addedAudios = getAddedAudios();
-                addedAudios.push(newAudio);
-                saveAddedAudios(addedAudios);
-                renderAllAudios();
-            };
-            reader.readAsDataURL(file);
+            const formData = new FormData();
+            formData.append('audio', file);
+            formData.append('nombre', file.name.replace(/\.[^/.]+$/, ''));
+
+            try {
+                const response = await fetch('backend/audios.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error('Error al subir el audio');
+            } catch (e) {
+                alert('No se pudo subir el audio: ' + file.name);
+            }
         }
         fileInput.value = '';
+        renderAllAudios();
     });
 
     // --- 6. EVENTOS DEL REPRODUCTOR Y OTROS ---
