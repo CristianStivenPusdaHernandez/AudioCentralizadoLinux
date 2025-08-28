@@ -324,17 +324,20 @@ const playAllCategory = async (categoria) => {
         alert('No hay audios en esta categoría');
         return;
     }
-    
     if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
     }
-    
     let currentIndex = 0;
-    
     const playNext = () => {
         if (currentIndex < audios.length) {
+            // Mostrar barra y título igual que playAudio
+            const audioProgressEl = document.getElementById('audio-progress');
+            const audioTitleEl = document.getElementById('audio-title');
+            audioTitleEl.textContent = audios[currentIndex].nombre;
+            audioProgressEl.classList.add('active');
             currentAudio = new Audio(audios[currentIndex].url);
+            currentAudioTitle = audios[currentIndex].nombre;
             currentAudio.addEventListener('play', () => {
                 isPlaying = true;
                 updatePlayButton();
@@ -348,13 +351,22 @@ const playAllCategory = async (categoria) => {
                 if (currentIndex >= audios.length) {
                     isPlaying = false;
                     updatePlayButton();
+                    hideProgressBar();
                 }
                 playNext();
+            });
+            currentAudio.addEventListener('timeupdate', updateProgressBar);
+            currentAudio.addEventListener('loadedmetadata', updateProgressBar);
+            currentAudio.addEventListener('error', (e) => {
+                console.error('Error al cargar audio:', e);
+                alert('Error al reproducir el audio. Verifique que el archivo sea válido.');
+                isPlaying = false;
+                updatePlayButton();
+                hideProgressBar();
             });
             currentAudio.play();
         }
     };
-    
     playNext();
 };
 const editAudio = async (id) => {

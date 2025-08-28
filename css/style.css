@@ -155,13 +155,12 @@ main {
     display: grid;
     grid-template-columns: 1fr; 
     gap: 20px;
-    padding: 20px 0;
-    overflow-y: auto; /* Permite scroll solo en el contenido principal */
+    padding: 0px 0;
+    overflow-y: auto; 
     padding-right: 0;
     margin-right: 0;
 }
 
-/* Personalizar scrollbar */
 main::-webkit-scrollbar {
     width: 12px;
 }
@@ -187,20 +186,9 @@ main::-webkit-scrollbar-thumb:hover {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-height: 200px; /* Reservar espacio para barra */
+    min-height: 200px; 
     gap: 15px;
     position: relative;
-}
-
-.player-card {
-    background-color: #444; /* Fondo del área del botón de play */
-    border-radius: 10px;
-    padding: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 225px; /* 25% más pequeño */
 }
 
 .audio-progress {
