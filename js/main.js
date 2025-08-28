@@ -137,7 +137,7 @@ const loadAudios = async () => {
             
             // Asignar event listeners SIEMPRE
             const audioButton = audioItem.querySelector('.audio-button');
-            audioButton.addEventListener('click', () => playAudio(audio.id, audio.url));
+            audioButton.addEventListener('click', () => playAudio(audio.id, audio.url, audio.nombre));
             
             if (canEdit) {
                 const editBtn = audioItem.querySelector('.edit-button');
@@ -208,6 +208,7 @@ const loadAudios = async () => {
 // Variables globales para audio
 let currentAudio = null;
 let isPlaying = false;
+let currentAudioTitle = '';
 let audiosByCategory = {
     'ANUNCIOS GENERALES': [],
     'ANUNCIOS DEL TREN': []
@@ -220,7 +221,37 @@ const updatePlayButton = () => {
     }
 };
 
-const playAudio = (id, url) => {
+const updateProgressBar = () => {
+    if (!currentAudio) return;
+    const progressBar = document.getElementById('progress-fill');
+    const currentTimeEl = document.getElementById('current-time');
+    const totalTimeEl = document.getElementById('total-time');
+    const audioTitleEl = document.getElementById('audio-title');
+    const audioProgressEl = document.getElementById('audio-progress');
+    if (currentAudio.duration) {
+        const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+        progressBar.style.width = progress + '%';
+        currentTimeEl.textContent = formatTime(currentAudio.currentTime);
+        totalTimeEl.textContent = formatTime(currentAudio.duration);
+        audioTitleEl.textContent = currentAudioTitle;
+        audioProgressEl.classList.add('active');
+    }
+};
+
+const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const hideProgressBar = () => {
+    const audioProgressEl = document.getElementById('audio-progress');
+    const audioTitleEl = document.getElementById('audio-title');
+    audioProgressEl.classList.remove('active');
+    audioTitleEl.textContent = 'Selecciona un audio';
+};
+
+const playAudio = (id, url, title = 'Audio') => {
     if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
@@ -228,6 +259,7 @@ const playAudio = (id, url) => {
     
     console.log('Intentando reproducir:', url);
     currentAudio = new Audio(url);
+    currentAudioTitle = title;
     
     currentAudio.addEventListener('play', () => {
         isPlaying = true;
@@ -243,7 +275,12 @@ const playAudio = (id, url) => {
     currentAudio.addEventListener('ended', () => {
         isPlaying = false;
         updatePlayButton();
+        hideProgressBar();
     });
+    
+    currentAudio.addEventListener('timeupdate', updateProgressBar);
+    
+    currentAudio.addEventListener('loadedmetadata', updateProgressBar);
     
     currentAudio.addEventListener('error', (e) => {
         console.error('Error al cargar audio:', e);
@@ -251,6 +288,7 @@ const playAudio = (id, url) => {
         alert('Error al reproducir el audio. Verifique que el archivo sea válido.');
         isPlaying = false;
         updatePlayButton();
+        hideProgressBar();
     });
     
     currentAudio.addEventListener('loadstart', () => {
@@ -520,4 +558,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón de play/pause global
     playButton.addEventListener('click', togglePlayPause);
+    
+    // Barra de progreso clickeable
+    const progressBar = document.getElementById('progress-bar');
+    progressBar.addEventListener('click', (e) => {
+        if (!currentAudio || !currentAudio.duration) return;
+        
+        const rect = progressBar.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const width = rect.width;
+        const percentage = clickX / width;
+        
+        currentAudio.currentTime = percentage * currentAudio.duration;
+        updateProgressBar();
+    });
 });
