@@ -36,17 +36,10 @@ function log_accion($conn, $accion) {
     // Simplificado - no hacer nada por ahora
 }
 
-$host = 'localhost';
-$db = 'appestacion';
-$user = 'root';
-$pass = '';
+require_once __DIR__ . '/config.php';
 
 try {
-    $conn = new mysqli($host, $user, $pass, $db);
-    if ($conn->connect_error) {
-        throw new Exception('Connection failed: ' . $conn->connect_error);
-    }
-    $conn->set_charset('utf8');
+    $conn = getDBConnection();
     
     // Crear tabla si no existe
     $sql = "CREATE TABLE IF NOT EXISTS audios (

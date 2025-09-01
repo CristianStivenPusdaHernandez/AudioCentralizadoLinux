@@ -15,11 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
+require_once __DIR__ . '/config.php';
+
 try {
-    $conn = new mysqli('localhost', 'root', '', 'appestacion');
-    if ($conn->connect_error) {
-        throw new Exception('Database connection failed');
-    }
+    $conn = getDBConnection();
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new Exception('Método no permitido');
