@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consola de Control - Tren del Tayta Imbabura</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/player-controls.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
     <div id="login-screen" class="login-wrapper">
@@ -40,11 +43,22 @@
 
         <main>
             <section class="player-section">
-                <div class="player-card">
-                    <div class="player-controls">
-                        <button class="play-button large">
-                            <i class="fa-solid fa-play"></i>
-                        </button>
+                <div class="player-controls">
+                    <button class="play-button large">
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                </div>
+                <div class="audio-progress" id="audio-progress">
+                    <div class="audio-title" id="audio-title">Selecciona un audio</div>
+                    <div class="progress-bar" id="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="time-display">
+                        <span id="current-time">0:00</span>
+                        <span id="total-time">0:00</span>
+                    </div>
+                    <div class="server-status" style="text-align: center; color: #666; font-size: 12px; margin-top: 5px;">
+                        Servidor
                     </div>
                 </div>
             </section>
@@ -76,7 +90,7 @@
                 </div>
             </section>
         </main>
-        
+
         <button class="fab">
             <i class="fa-solid fa-plus"></i>
         </button>
@@ -121,4 +135,5 @@
 
     <script src="js/main.js"></script>
 </body>
+
 </html>

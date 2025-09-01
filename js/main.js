@@ -25,6 +25,7 @@ const showApp = (userData) => {
         }
     }
     loadAudios(); // Cargar audios al mostrar la app
+    startStatusCheck(); // Iniciar verificación de estado
 };
 
 // Verifica la sesión al cargar la página
@@ -137,7 +138,7 @@ const loadAudios = async () => {
             
             // Asignar event listeners SIEMPRE
             const audioButton = audioItem.querySelector('.audio-button');
-            audioButton.addEventListener('click', () => playAudio(audio.id, audio.url));
+            audioButton.addEventListener('click', () => playAudio(audio.id, audio.url, audio.nombre));
             
             if (canEdit) {
                 const editBtn = audioItem.querySelector('.edit-button');
@@ -208,10 +209,12 @@ const loadAudios = async () => {
 // Variables globales para audio
 let currentAudio = null;
 let isPlaying = false;
+let currentAudioTitle = '';
 let audiosByCategory = {
     'ANUNCIOS GENERALES': [],
     'ANUNCIOS DEL TREN': []
 };
+let statusCheckInterval = null;
 
 const updatePlayButton = () => {
     const playButton = document.querySelector('.player-section .play-button i');
@@ -220,63 +223,179 @@ const updatePlayButton = () => {
     }
 };
 
-const playAudio = (id, url) => {
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
+const updateProgressBar = () => {
+    if (!currentAudio) return;
+    const progressBar = document.getElementById('progress-fill');
+    const currentTimeEl = document.getElementById('current-time');
+    const totalTimeEl = document.getElementById('total-time');
+    const audioTitleEl = document.getElementById('audio-title');
+    const audioProgressEl = document.getElementById('audio-progress');
+    if (currentAudio.duration) {
+        const progress = (currentAudio.currentTime / currentAudio.duration) * 100;
+        progressBar.style.width = progress + '%';
+        currentTimeEl.textContent = formatTime(currentAudio.currentTime);
+        totalTimeEl.textContent = formatTime(currentAudio.duration);
+        audioTitleEl.textContent = currentAudioTitle;
+        audioProgressEl.classList.add('active');
     }
-    
-    console.log('Intentando reproducir:', url);
-    currentAudio = new Audio(url);
-    
-    currentAudio.addEventListener('play', () => {
+};
+
+const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+const hideProgressBar = () => {
+    const audioProgressEl = document.getElementById('audio-progress');
+    const audioTitleEl = document.getElementById('audio-title');
+    audioProgressEl.classList.remove('active');
+    audioTitleEl.textContent = 'Selecciona un audio';
+};
+
+const playAudio = async (id, url, title = 'Audio') => {
+    try {
+        const response = await fetch('backend/player.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'play', audio_id: id })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Audio reproduciéndose en servidor:', result.message);
+        
+        // Mostrar información del audio
+        const audioTitle = result.title || title;
+        document.getElementById('audio-title').textContent = `🔊 ${audioTitle} (Servidor)`;
+        document.getElementById('audio-progress').classList.add('active');
+        
+        // Actualizar estado del botón
         isPlaying = true;
+        currentAudioTitle = audioTitle;
         updatePlayButton();
-        console.log('Audio iniciado');
-    });
-    
-    currentAudio.addEventListener('pause', () => {
+        
+    } catch (error) {
+        console.error('Error de conexión:', error);
+        alert('Error de conexión al servidor: ' + error.message);
+    }
+};
+
+const stopAudio = async () => {
+    try {
+        const response = await fetch('backend/player.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'stop' })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Audio detenido:', result.message);
+        
+        // Actualizar interfaz
         isPlaying = false;
         updatePlayButton();
-    });
-    
-    currentAudio.addEventListener('ended', () => {
-        isPlaying = false;
-        updatePlayButton();
-    });
-    
-    currentAudio.addEventListener('error', (e) => {
-        console.error('Error al cargar audio:', e);
-        console.error('URL del audio:', url);
-        alert('Error al reproducir el audio. Verifique que el archivo sea válido.');
-        isPlaying = false;
-        updatePlayButton();
-    });
-    
-    currentAudio.addEventListener('loadstart', () => {
-        console.log('Iniciando carga del audio');
-    });
-    
-    currentAudio.addEventListener('canplay', () => {
-        console.log('Audio listo para reproducir');
-    });
-    
-    currentAudio.play().catch(error => {
-        console.error('Error al reproducir:', error);
-        alert('No se pudo reproducir el audio: ' + error.message);
-    });
+        hideProgressBar();
+        
+    } catch (error) {
+        console.error('Error al detener audio:', error);
+        alert('Error al detener audio: ' + error.message);
+    }
+};
+
+// Verificar estado del reproductor cada 2 segundos
+const checkPlayerStatus = async () => {
+    try {
+        const response = await fetch('backend/player_status.php', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const text = await response.text();
+            let status;
+            
+            try {
+                status = JSON.parse(text);
+            } catch (parseError) {
+                console.error('Error parsing JSON:', text);
+                return;
+            }
+            
+            // Validar que status existe y tiene las propiedades necesarias
+            if (!status || typeof status !== 'object') {
+                console.error('Estado inválido:', status);
+                return;
+            }
+            
+            // Actualizar interfaz según el estado
+            if (status.playing === true && status.title) {
+                document.getElementById('audio-title').textContent = `🔊 ${status.title}`;
+                document.getElementById('audio-progress').classList.add('active');
+                
+                // Mostrar progreso real si está disponible
+                if (status.duration && status.duration > 0) {
+                    const progress = Math.min((status.position / status.duration) * 100, 100);
+                    document.getElementById('progress-fill').style.width = progress + '%';
+                    document.getElementById('current-time').textContent = formatTime(status.position || 0);
+                    document.getElementById('total-time').textContent = formatTime(status.duration || 0);
+                } else {
+                    document.getElementById('progress-fill').style.width = '50%';
+                    document.getElementById('current-time').textContent = 'Reproduciendo...';
+                    document.getElementById('total-time').textContent = 'Servidor';
+                }
+                
+                isPlaying = true;
+            } else {
+                document.getElementById('audio-title').textContent = 'Selecciona un audio';
+                document.getElementById('audio-progress').classList.remove('active');
+                document.getElementById('progress-fill').style.width = '0%';
+                document.getElementById('current-time').textContent = '0:00';
+                document.getElementById('total-time').textContent = '0:00';
+                isPlaying = false;
+            }
+            updatePlayButton();
+        }
+    } catch (error) {
+        console.error('Error verificando estado:', error);
+    }
+};
+
+const startStatusCheck = () => {
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+    }
+    statusCheckInterval = setInterval(checkPlayerStatus, 1000); // Cada 1 segundo
+    // Esperar 2 segundos antes de la primera verificación para dar tiempo al PowerShell
+    setTimeout(checkPlayerStatus, 2000);
+};
+
+const stopStatusCheck = () => {
+    if (statusCheckInterval) {
+        clearInterval(statusCheckInterval);
+        statusCheckInterval = null;
+    }
 };
 
 const togglePlayPause = () => {
-    if (!currentAudio) {
-        alert('No hay audio seleccionado');
-        return;
-    }
-    
     if (isPlaying) {
-        currentAudio.pause();
+        stopAudio();
     } else {
-        currentAudio.play();
+        alert('Selecciona un audio para reproducir');
     }
 };
 
@@ -286,17 +405,20 @@ const playAllCategory = async (categoria) => {
         alert('No hay audios en esta categoría');
         return;
     }
-    
     if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
     }
-    
     let currentIndex = 0;
-    
     const playNext = () => {
         if (currentIndex < audios.length) {
+            // Mostrar barra y título igual que playAudio
+            const audioProgressEl = document.getElementById('audio-progress');
+            const audioTitleEl = document.getElementById('audio-title');
+            audioTitleEl.textContent = audios[currentIndex].nombre;
+            audioProgressEl.classList.add('active');
             currentAudio = new Audio(audios[currentIndex].url);
+            currentAudioTitle = audios[currentIndex].nombre;
             currentAudio.addEventListener('play', () => {
                 isPlaying = true;
                 updatePlayButton();
@@ -310,13 +432,22 @@ const playAllCategory = async (categoria) => {
                 if (currentIndex >= audios.length) {
                     isPlaying = false;
                     updatePlayButton();
+                    hideProgressBar();
                 }
                 playNext();
+            });
+            currentAudio.addEventListener('timeupdate', updateProgressBar);
+            currentAudio.addEventListener('loadedmetadata', updateProgressBar);
+            currentAudio.addEventListener('error', (e) => {
+                console.error('Error al cargar audio:', e);
+                alert('Error al reproducir el audio. Verifique que el archivo sea válido.');
+                isPlaying = false;
+                updatePlayButton();
+                hideProgressBar();
             });
             currentAudio.play();
         }
     };
-    
     playNext();
 };
 const editAudio = async (id) => {
@@ -411,6 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Manejar el cierre de sesión
     logoutBtn.addEventListener('click', async () => {
+        stopStatusCheck();
         await fetch('backend/logout.php');
         userSession = null;
         showLogin();
@@ -520,4 +652,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón de play/pause global
     playButton.addEventListener('click', togglePlayPause);
+    
+    // Barra de progreso solo visual (no clickeable)
+    // El audio se reproduce completamente en el servidor
 });
