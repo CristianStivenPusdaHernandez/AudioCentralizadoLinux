@@ -186,7 +186,7 @@ main::-webkit-scrollbar-thumb:hover {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    min-height: 200px; 
+    min-height: 230px; 
     gap: 15px;
     position: relative;
     overflow: hidden;
@@ -196,12 +196,12 @@ main::-webkit-scrollbar-thumb:hover {
 
 .audio-progress {
     width: calc(100% - 40px);
-    max-width: 450px;
+    max-width: 400px;
     display: none;
     flex-direction: column;
     gap: 10px;
     margin: 0 auto;
-    padding: 15px 20px;
+    padding: 5px 5px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 12px;
     border: 1px solid rgba(254, 108, 108, 0.1);
