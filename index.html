@@ -3,6 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
+    <!-- Favicon personalizado -->
+    <link rel="icon" type="image/png" href="assets/LogoTren.PNG">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consola de Control - Tren del Tayta Imbabura</title>
     <link rel="stylesheet" href="css/style.css">
@@ -47,6 +49,9 @@
                     <button class="play-button large">
                         <i class="fa-solid fa-play"></i>
                     </button>
+                    <button class="repeat-button" id="repeat-button" title="Repetir audio">
+                        <i class="fa-solid fa-repeat"></i>
+                    </button>
                 </div>
                 <div class="audio-progress" id="audio-progress">
                     <div class="audio-title" id="audio-title">Selecciona un audio</div>
@@ -71,8 +76,11 @@
 
                 <div class="category">
                     <div class="category-header">
-                        <h3><i class="fa-solid fa-star"></i> Anuncios Generales</h3>
-                        <button class="reproducir-todo">Reproducir Todo</button>
+                        <h3><i class="fa-solid fa-play"></i> Anuncios Generales</h3>
+                        <div class="category-buttons">
+                            <button class="edit-category-button" data-categoria="ANUNCIOS GENERALES" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>
+                            <button class="reproducir-todo">Reproducir Todo</button>
+                        </div>
                     </div>
                     <div class="button-grid" id="general-grid">
                         <!-- Los audios generales se cargarán dinámicamente -->
@@ -82,7 +90,10 @@
                 <div class="category">
                     <div class="category-header">
                         <h3><i class="fa-solid fa-train"></i> Anuncios de Tren</h3>
-                        <button class="reproducir-todo">Reproducir Todo</button>
+                        <div class="category-buttons">
+                            <button class="edit-category-button" data-categoria="ANUNCIOS DEL TREN" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>
+                            <button class="reproducir-todo">Reproducir Todo</button>
+                        </div>
                     </div>
                     <div class="button-grid" id="train-grid">
                         <!-- Los audios de tren se cargarán dinámicamente -->

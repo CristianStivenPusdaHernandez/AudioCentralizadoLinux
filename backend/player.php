@@ -35,11 +35,15 @@ try {
     $action = $data['action'] ?? 'play';
 
     if ($action === 'stop') {
+        // Crear archivo de señal para detener monitor
+        file_put_contents(sys_get_temp_dir() . '/stop_monitor.txt', '1');
+        
+        // Detener procesos
         shell_exec('taskkill /f /im powershell.exe >nul 2>&1');
         shell_exec('taskkill /f /im php.exe /fi "WINDOWTITLE eq audio_monitor*" >nul 2>&1');
         
-        // Crear archivo de señal para detener monitor
-        file_put_contents(sys_get_temp_dir() . '/stop_monitor.txt', '1');
+        // Esperar un momento para que se detengan
+        usleep(200000); // 200ms
         
         // Actualizar estado global
         $status = [
@@ -47,9 +51,13 @@ try {
             'title' => '',
             'duration' => 0,
             'position' => 0,
+            'repeat' => false,
             'timestamp' => time()
         ];
         file_put_contents(sys_get_temp_dir() . '/player_status.json', json_encode($status));
+        
+        // Limpiar archivo de señal
+        @unlink(sys_get_temp_dir() . '/stop_monitor.txt');
         
         echo json_encode(['success' => true, 'message' => 'Audio detenido']);
         exit;
@@ -78,35 +86,57 @@ try {
         throw new Exception('Audio no encontrado');
     }
 
-    // Detener audio anterior y monitor
+    // Detener audio anterior y monitor de forma más efectiva
     shell_exec('taskkill /f /im powershell.exe >nul 2>&1');
     shell_exec('taskkill /f /im php.exe /fi "WINDOWTITLE eq audio_monitor*" >nul 2>&1');
     
+    // Crear archivo de señal para detener monitor anterior
+    file_put_contents(sys_get_temp_dir() . '/stop_monitor.txt', '1');
+    
+    // Esperar un momento para que los procesos se detengan
+    usleep(300000); // 300ms
+    
     // Limpiar archivos de señal
     @unlink(sys_get_temp_dir() . '/stop_monitor.txt');
+    
+    // Limpiar estado anterior
+    $stop_status = [
+        'playing' => false,
+        'title' => '',
+        'duration' => 0,
+        'position' => 0,
+        'timestamp' => time()
+    ];
+    file_put_contents(sys_get_temp_dir() . '/player_status.json', json_encode($stop_status));
     
     $temp_file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'audio_' . $audio_id . '.' . $row['extension'];
     file_put_contents($temp_file, $row['archivo']);
     
     $safe_file = str_replace('\\', '/', $temp_file);
     
-    // Reproducir audio simple
-    $command = 'powershell -WindowStyle Hidden -ExecutionPolicy Bypass -Command "Add-Type -AssemblyName presentationCore; $mp = New-Object system.windows.media.mediaplayer; $mp.open([uri]\'file:///' . $safe_file . '\'); $mp.Play(); Start-Sleep 1; while(-not $mp.NaturalDuration.HasTimeSpan) { Start-Sleep 0.1 }; Start-Sleep $mp.NaturalDuration.TimeSpan.TotalSeconds; $mp.Close()"';
+    // Obtener duración primero
+    $duration_cmd = 'powershell -WindowStyle Hidden -Command "Add-Type -AssemblyName presentationCore; $mp = New-Object system.windows.media.mediaplayer; $mp.open([uri]\'file:///' . $safe_file . '\'); Start-Sleep 1; while(-not $mp.NaturalDuration.HasTimeSpan) { Start-Sleep 0.1 }; [math]::Round($mp.NaturalDuration.TimeSpan.TotalSeconds); $mp.Close()"';
+    $real_duration = intval(trim(shell_exec($duration_cmd)));
+    if ($real_duration <= 0) $real_duration = 30;
     
-    pclose(popen('start /B ' . $command, 'r'));
+    // Reproducir audio
+    $play_cmd = 'powershell -WindowStyle Hidden -Command "Add-Type -AssemblyName presentationCore; $mp = New-Object system.windows.media.mediaplayer; $mp.open([uri]\'file:///' . $safe_file . '\'); $mp.Play(); Start-Sleep ' . $real_duration . '; $mp.Close()"';
+    pclose(popen('start /B ' . $play_cmd, 'r'));
     
-    // Iniciar monitor de progreso (estimado 30 segundos)
-    $monitor_command = 'php "' . __DIR__ . '/audio_monitor.php" "' . addslashes($row['nombre']) . '" 30';
+    // Iniciar monitor
+    $monitor_command = 'php "' . __DIR__ . '/audio_monitor.php" "' . addslashes($row['nombre']) . '" ' . $real_duration;
     pclose(popen('start /B ' . $monitor_command, 'r'));
     
     log_accion($conn, 'Reprodujo audio en servidor: ' . $row['nombre']);
     
-    // Estado inicial simple
+    // Estado inicial
+    $repeat = isset($data['repeat']) ? $data['repeat'] : false;
     $status = [
         'playing' => true,
         'title' => $row['nombre'],
-        'duration' => 0,
+        'duration' => $real_duration,
         'position' => 0,
+        'repeat' => $repeat,
         'timestamp' => time()
     ];
     file_put_contents(sys_get_temp_dir() . '/player_status.json', json_encode($status));
@@ -114,7 +144,8 @@ try {
     echo json_encode([
         'success' => true, 
         'message' => 'Audio reproduciéndose en servidor',
-        'title' => $row['nombre']
+        'title' => $row['nombre'],
+        'duration' => $real_duration
     ]);
 
 } catch (Exception $e) {

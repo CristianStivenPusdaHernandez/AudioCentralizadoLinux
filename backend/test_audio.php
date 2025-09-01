@@ -1,4 +1,4 @@
-e deja<?php
+<?php
 // Test de permisos y capacidades de audio
 header('Content-Type: text/plain');
 

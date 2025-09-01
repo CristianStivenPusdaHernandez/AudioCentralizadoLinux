@@ -11,6 +11,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     exit(0);
 }
 
+// Proteger el endpoint: solo usuarios autenticados pueden acceder
+require_login();
+
 // Funciones de autenticación simplificadas
 function require_login() {
     if (!isset($_SESSION['usuario_id'])) {
@@ -208,6 +211,32 @@ switch ($method) {
         } else {
             http_response_code(500);
             echo json_encode(['error' => 'No se pudo renombrar el audio']);
+        }
+        break;
+
+    case 'PATCH':
+        require_permiso('editar_audio');
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!isset($input['action']) || $input['action'] !== 'edit_category') {
+            http_response_code(400);
+            echo json_encode(['error' => 'Acción no válida']);
+            exit;
+        }
+        if (!isset($input['old_category']) || !isset($input['new_category'])) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Faltan datos para editar categoría']);
+            exit;
+        }
+        $old_category = $conn->real_escape_string($input['old_category']);
+        $new_category = $conn->real_escape_string($input['new_category']);
+        $stmt = $conn->prepare('UPDATE audios SET categoria = ? WHERE categoria = ?');
+        $stmt->bind_param('ss', $new_category, $old_category);
+        if ($stmt->execute()) {
+            log_accion($conn, 'Renombró categoría: ' . $old_category . ' a ' . $new_category);
+            echo json_encode(['success' => true, 'affected_rows' => $stmt->affected_rows]);
+        } else {
+            http_response_code(500);
+            echo json_encode(['error' => 'No se pudo renombrar la categoría']);
         }
         break;
 

@@ -1,6 +1,3 @@
-/* css/style.css */
-
-/* Reset básico */
 * {
     margin: 0;
     padding: 0;
@@ -98,20 +95,21 @@ body {
 
 /* Estilos para la aplicación principal */
 .app-container {
-    display: grid; /* Usar grid para el layout general */
-    grid-template-rows: auto 1fr auto; /* Header, Main, Footer (si lo hubiera) */
-    grid-template-columns: 1fr; /* Una sola columna principal */
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
     width: 100%;
-    max-width: 1200px; /* Ancho máximo para el contenido */
+    max-width: 1200px;
     height: 90vh;
     padding: 20px;
     gap: 20px;
-    background-color: #1e1e1e; /* Fondo de la app */
+    background-color: #1e1e1e;
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-    overflow: hidden; /* Para manejar scrolls internos */
+    overflow: hidden;
     margin: 0 auto;
     align-self: center;
+    box-sizing: border-box;
 }
 
 header {
@@ -123,7 +121,8 @@ header {
 }
 
 .logo img {
-    height: 40px; /* Ajusta el tamaño del logo */
+    height: 100px; 
+    width: auto;
 }
 
 .user-info {
@@ -153,12 +152,13 @@ header {
 
 main {
     display: grid;
-    grid-template-columns: 1fr; 
+    grid-template-columns: 1fr;
     gap: 20px;
-    padding: 0px 0;
-    overflow-y: auto; 
-    padding-right: 0;
-    margin-right: 0;
+    padding: 0;
+    overflow-y: auto;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 main::-webkit-scrollbar {
@@ -180,7 +180,7 @@ main::-webkit-scrollbar-thumb:hover {
 
 .player-section {
     background-color: #333;
-    padding: 20px;
+    padding: 15px;
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -189,14 +189,23 @@ main::-webkit-scrollbar-thumb:hover {
     min-height: 200px; 
     gap: 15px;
     position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .audio-progress {
-    width: 100%;
-    max-width: 400px;
+    width: calc(100% - 40px);
+    max-width: 450px;
     display: none;
     flex-direction: column;
     gap: 10px;
+    margin: 0 auto;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(254, 108, 108, 0.1);
+    box-sizing: border-box;
 }
 .audio-progress.active {
     display: flex;
@@ -226,29 +235,30 @@ main::-webkit-scrollbar-thumb:hover {
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
-    color: #bbb;
+    color: #b40f0f;
 }
 
 .audio-title {
     text-align: center;
     font-size: 1rem;
-    color: #f0f0f0;
+    color: #a71c1c;
     margin-bottom: 5px;
 }
 
 .play-button.large {
-    background-color: #ff0000; /* Rojo vibrante */
+    background-color: #ff0000;
     color: white;
     border: none;
     border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 1.9rem;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 15px 30;
 }
 
 .play-button.large:hover {
@@ -314,6 +324,12 @@ main::-webkit-scrollbar-thumb:hover {
     color: #ffc107; /* Color para los iconos de categoría */
 }
 
+.category-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .category-header .reproducir-todo {
     background-color: #007bff; /* Color azul */
     color: white;
@@ -327,6 +343,22 @@ main::-webkit-scrollbar-thumb:hover {
 
 .category-header .reproducir-todo:hover {
     background-color: #0056b3;
+}
+
+.edit-category-button {
+    background: none;
+    border: none;
+    color: #bbb;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.edit-category-button:hover {
+    color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.1);
 }
 
 .button-grid {
@@ -531,4 +563,20 @@ main::-webkit-scrollbar-thumb:hover {
 .btn-submit:disabled {
     background-color: #666;
     cursor: not-allowed;
+}
+
+.edit-category-button {
+    background: none;
+    border: none;
+    color: #bbb;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.edit-category-button:hover {
+    color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.1);
 }

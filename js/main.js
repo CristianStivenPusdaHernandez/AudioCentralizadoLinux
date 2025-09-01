@@ -28,6 +28,19 @@ const showApp = (userData) => {
     startStatusCheck(); // Iniciar verificación de estado
 };
 
+// Función para obtener duración de audio (fallback para archivos locales)
+const getAudioDuration = (url) => {
+    return new Promise((resolve) => {
+        const audio = new Audio(url);
+        audio.addEventListener('loadedmetadata', () => {
+            resolve(audio.duration || 0);
+        });
+        audio.addEventListener('error', () => {
+            resolve(0);
+        });
+    });
+};
+
 // Verifica la sesión al cargar la página
 const checkSession = async () => {
     try {
@@ -167,10 +180,16 @@ const loadAudios = async () => {
                     customSection = document.createElement('div');
                     customSection.className = 'category';
                     customSection.setAttribute('data-categoria', audio.categoria);
+                    const canEditCategory = userSession && userSession.permisos && userSession.permisos.includes('editar_audio');
+                    const editCategoryButton = canEditCategory ? `<button class="edit-category-button" data-categoria="${audio.categoria}" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>` : '';
+                    
                     customSection.innerHTML = `
                         <div class="category-header">
                             <h3><i class="fa-solid fa-music"></i> ${audio.categoria}</h3>
-                            <button class="reproducir-todo">Reproducir Todo</button>
+                            <div class="category-buttons">
+                                ${editCategoryButton}
+                                <button class="reproducir-todo">Reproducir Todo</button>
+                            </div>
                         </div>
                         <div class="button-grid"></div>
                     `;
@@ -201,6 +220,11 @@ const loadAudios = async () => {
                 btn.addEventListener('click', () => playAllCategory(categoria));
             }
         });
+        
+        // Event listeners para botones de editar categoría (tanto predeterminadas como personalizadas)
+        document.querySelectorAll('.edit-category-button').forEach(btn => {
+            btn.addEventListener('click', () => editCategory(btn.dataset.categoria));
+        });
     } catch (error) {
         console.error('Error al obtener audios:', error);
     }
@@ -210,6 +234,9 @@ const loadAudios = async () => {
 let currentAudio = null;
 let isPlaying = false;
 let currentAudioTitle = '';
+let isRepeating = false;
+let currentAudioId = null;
+let currentAudioUrl = '';
 let audiosByCategory = {
     'ANUNCIOS GENERALES': [],
     'ANUNCIOS DEL TREN': []
@@ -256,13 +283,20 @@ const hideProgressBar = () => {
 
 const playAudio = async (id, url, title = 'Audio') => {
     try {
+        // Detener audio actual antes de reproducir uno nuevo
+        if (isPlaying) {
+            await stopAudio();
+            // Esperar un momento para asegurar que el audio anterior se detuvo completamente
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
         const response = await fetch('backend/player.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({ action: 'play', audio_id: id })
+            body: JSON.stringify({ action: 'play', audio_id: id, repeat: isRepeating })
         });
         
         if (!response.ok) {
@@ -272,15 +306,27 @@ const playAudio = async (id, url, title = 'Audio') => {
         const result = await response.json();
         console.log('Audio reproduciéndose en servidor:', result.message);
         
-        // Mostrar información del audio
+        // Guardar información del audio actual
+        currentAudioId = id;
+        currentAudioUrl = url;
         const audioTitle = result.title || title;
-        document.getElementById('audio-title').textContent = `🔊 ${audioTitle} (Servidor)`;
+        const duration = result.duration || 0;
+        
+        document.getElementById('audio-title').textContent = `🔊 ${audioTitle} (${formatTime(duration)})`;
         document.getElementById('audio-progress').classList.add('active');
+        
+        // Mostrar duración total inmediatamente
+        if (duration > 0) {
+            document.getElementById('total-time').textContent = formatTime(duration);
+        }
         
         // Actualizar estado del botón
         isPlaying = true;
         currentAudioTitle = audioTitle;
         updatePlayButton();
+        
+        // Mostrar botón de repetición
+        document.getElementById('repeat-button').style.display = 'flex';
         
     } catch (error) {
         console.error('Error de conexión:', error);
@@ -306,10 +352,17 @@ const stopAudio = async () => {
         const result = await response.json();
         console.log('Audio detenido:', result.message);
         
-        // Actualizar interfaz
+        // Actualizar interfaz inmediatamente
         isPlaying = false;
+        currentAudioTitle = '';
+        currentAudioId = null; // Limpiar ID para evitar repetición
         updatePlayButton();
         hideProgressBar();
+        
+        // Limpiar barra de progreso
+        document.getElementById('progress-fill').style.width = '0%';
+        document.getElementById('current-time').textContent = '0:00';
+        document.getElementById('total-time').textContent = '0:00';
         
     } catch (error) {
         console.error('Error al detener audio:', error);
@@ -342,10 +395,21 @@ const checkPlayerStatus = async () => {
                 return;
             }
             
+            // Solo actualizar si el estado cambió para evitar conflictos
+            const wasPlaying = isPlaying;
+            const currentTitle = document.getElementById('audio-title').textContent;
+            
             // Actualizar interfaz según el estado
             if (status.playing === true && status.title) {
-                document.getElementById('audio-title').textContent = `🔊 ${status.title}`;
-                document.getElementById('audio-progress').classList.add('active');
+                const titleWithDuration = status.duration > 0 ? 
+                    `🔊 ${status.title} (${formatTime(status.duration)})` : 
+                    `🔊 ${status.title}`;
+                
+                // Solo actualizar si cambió el título o el estado
+                if (!wasPlaying || !currentTitle.includes(status.title)) {
+                    document.getElementById('audio-title').textContent = titleWithDuration;
+                    document.getElementById('audio-progress').classList.add('active');
+                }
                 
                 // Mostrar progreso real si está disponible
                 if (status.duration && status.duration > 0) {
@@ -354,19 +418,49 @@ const checkPlayerStatus = async () => {
                     document.getElementById('current-time').textContent = formatTime(status.position || 0);
                     document.getElementById('total-time').textContent = formatTime(status.duration || 0);
                 } else {
-                    document.getElementById('progress-fill').style.width = '50%';
-                    document.getElementById('current-time').textContent = 'Reproduciendo...';
-                    document.getElementById('total-time').textContent = 'Servidor';
+                    document.getElementById('progress-fill').style.width = '10%';
+                    document.getElementById('current-time').textContent = 'Cargando...';
+                    document.getElementById('total-time').textContent = 'Obteniendo duración...';
                 }
                 
                 isPlaying = true;
+                currentAudioTitle = status.title;
+                
+                // Sincronizar estado de repetición solo si cambió desde otro dispositivo
+                if (status.repeat !== undefined && status.repeat !== isRepeating) {
+                    isRepeating = status.repeat;
+                    const repeatButton = document.getElementById('repeat-button');
+                    if (repeatButton.style.display !== 'none') {
+                        if (isRepeating) {
+                            repeatButton.classList.add('active');
+                        } else {
+                            repeatButton.classList.remove('active');
+                        }
+                    }
+                }
             } else {
-                document.getElementById('audio-title').textContent = 'Selecciona un audio';
-                document.getElementById('audio-progress').classList.remove('active');
-                document.getElementById('progress-fill').style.width = '0%';
-                document.getElementById('current-time').textContent = '0:00';
-                document.getElementById('total-time').textContent = '0:00';
+                // Si el audio terminó y está en modo repetición, reproducir de nuevo
+                if (wasPlaying && isRepeating && currentAudioId) {
+                    setTimeout(() => playAudio(currentAudioId, currentAudioUrl, currentAudioTitle), 500);
+                    return;
+                }
+                
+                // Si el audio terminó y está en modo repetición, reproducir de nuevo
+                if (wasPlaying && isRepeating && currentAudioId) {
+                    setTimeout(() => playAudio(currentAudioId, currentAudioUrl, currentAudioTitle), 500);
+                    return;
+                }
+                
+                // Solo limpiar si estaba reproduciendo y NO está en repetición
+                if (wasPlaying && !isRepeating) {
+                    document.getElementById('audio-title').textContent = 'Selecciona un audio';
+                    document.getElementById('audio-progress').classList.remove('active');
+                    document.getElementById('progress-fill').style.width = '0%';
+                    document.getElementById('current-time').textContent = '0:00';
+                    document.getElementById('total-time').textContent = '0:00';
+                }
                 isPlaying = false;
+                currentAudioTitle = '';
             }
             updatePlayButton();
         }
@@ -379,9 +473,9 @@ const startStatusCheck = () => {
     if (statusCheckInterval) {
         clearInterval(statusCheckInterval);
     }
-    statusCheckInterval = setInterval(checkPlayerStatus, 1000); // Cada 1 segundo
-    // Esperar 2 segundos antes de la primera verificación para dar tiempo al PowerShell
-    setTimeout(checkPlayerStatus, 2000);
+    statusCheckInterval = setInterval(checkPlayerStatus, 1000); // Cada 1 segundo para evitar conflictos
+    // Verificación inmediata
+    setTimeout(checkPlayerStatus, 100);
 };
 
 const stopStatusCheck = () => {
@@ -399,53 +493,56 @@ const togglePlayPause = () => {
     }
 };
 
+const toggleRepeat = async () => {
+    isRepeating = !isRepeating;
+    const repeatButton = document.getElementById('repeat-button');
+    if (isRepeating) {
+        repeatButton.classList.add('active');
+    } else {
+        repeatButton.classList.remove('active');
+    }
+    
+    // Enviar estado al servidor para sincronizar
+    try {
+        await fetch('backend/player_status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ repeat: isRepeating })
+        });
+    } catch (error) {
+        console.error('Error sincronizando estado de repetición:', error);
+    }
+};
+
 const playAllCategory = async (categoria) => {
     const audios = audiosByCategory[categoria];
     if (!audios || audios.length === 0) {
         alert('No hay audios en esta categoría');
         return;
     }
-    if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
+    
+    // Detener audio actual
+    if (isPlaying) {
+        await stopAudio();
+        await new Promise(resolve => setTimeout(resolve, 200));
     }
+    
     let currentIndex = 0;
-    const playNext = () => {
+    const playNext = async () => {
         if (currentIndex < audios.length) {
-            // Mostrar barra y título igual que playAudio
-            const audioProgressEl = document.getElementById('audio-progress');
-            const audioTitleEl = document.getElementById('audio-title');
-            audioTitleEl.textContent = audios[currentIndex].nombre;
-            audioProgressEl.classList.add('active');
-            currentAudio = new Audio(audios[currentIndex].url);
-            currentAudioTitle = audios[currentIndex].nombre;
-            currentAudio.addEventListener('play', () => {
-                isPlaying = true;
-                updatePlayButton();
-            });
-            currentAudio.addEventListener('pause', () => {
-                isPlaying = false;
-                updatePlayButton();
-            });
-            currentAudio.addEventListener('ended', () => {
-                currentIndex++;
-                if (currentIndex >= audios.length) {
-                    isPlaying = false;
-                    updatePlayButton();
-                    hideProgressBar();
+            await playAudio(audios[currentIndex].id, audios[currentIndex].url, audios[currentIndex].nombre);
+            
+            // Esperar a que termine el audio antes de reproducir el siguiente
+            const checkIfFinished = setInterval(async () => {
+                if (!isPlaying) {
+                    clearInterval(checkIfFinished);
+                    currentIndex++;
+                    if (currentIndex < audios.length) {
+                        setTimeout(playNext, 500);
+                    }
                 }
-                playNext();
-            });
-            currentAudio.addEventListener('timeupdate', updateProgressBar);
-            currentAudio.addEventListener('loadedmetadata', updateProgressBar);
-            currentAudio.addEventListener('error', (e) => {
-                console.error('Error al cargar audio:', e);
-                alert('Error al reproducir el audio. Verifique que el archivo sea válido.');
-                isPlaying = false;
-                updatePlayButton();
-                hideProgressBar();
-            });
-            currentAudio.play();
+            }, 1000);
         }
     };
     playNext();
@@ -494,6 +591,37 @@ const deleteAudio = async (id) => {
             alert('No tienes permisos para eliminar audios');
         } else {
             alert('Error al eliminar: ' + (result.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión');
+    }
+};
+
+const editCategory = async (oldCategory) => {
+    const newCategory = prompt('Ingrese el nuevo nombre de la categoría:', oldCategory);
+    if (!newCategory || newCategory === oldCategory) return;
+    
+    try {
+        const response = await fetch('backend/audios.php', {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                action: 'edit_category',
+                old_category: oldCategory,
+                new_category: newCategory.toUpperCase()
+            })
+        });
+        
+        const result = await response.json();
+        if (response.ok && result.success) {
+            loadAudios();
+            alert('Categoría renombrada exitosamente');
+        } else if (response.status === 403) {
+            alert('No tienes permisos para editar categorías');
+        } else {
+            alert('Error al renombrar categoría: ' + (result.error || 'Error desconocido'));
         }
     } catch (error) {
         console.error('Error:', error);
@@ -652,6 +780,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón de play/pause global
     playButton.addEventListener('click', togglePlayPause);
+    
+    // Botón de repetición
+    const repeatButton = document.getElementById('repeat-button');
+    repeatButton.addEventListener('click', toggleRepeat);
+    
+    // Barra de búsqueda
+    const searchInput = document.querySelector('.search-bar input');
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll('.audio-item').forEach(item => {
+            const audioName = item.querySelector('.audio-button').textContent.toLowerCase();
+            if (audioName.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Ocultar categorías vacías
+        document.querySelectorAll('.category').forEach(category => {
+            const visibleItems = category.querySelectorAll('.audio-item[style*="flex"], .audio-item:not([style*="none"])');
+            if (visibleItems.length === 0 && searchTerm !== '') {
+                category.style.display = 'none';
+            } else {
+                category.style.display = 'block';
+            }
+        });
+    });
     
     // Barra de progreso solo visual (no clickeable)
     // El audio se reproduce completamente en el servidor
