@@ -126,11 +126,14 @@ header {
     border-radius: 8px;
 }
 
-h2 {
+#titulo {
     color: #f0f0f0;
     font-size: 1.5rem;
     margin-left: 15px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+    left: -30px;
+    text-align: center;
+
 }
 
 .user-info {
