@@ -105,8 +105,11 @@ switch ($method) {
                     // Configurar headers apropiados
                     $mime = 'audio/mpeg';
                     if ($row['extension'] === 'm4a') $mime = 'audio/mp4';
+                    if ($row['extension'] === 'm4p') $mime = 'audio/mp4';
                     if ($row['extension'] === 'wav') $mime = 'audio/wav';
                     if ($row['extension'] === 'ogg') $mime = 'audio/ogg';
+                    if ($row['extension'] === 'flac') $mime = 'audio/flac';
+                    if ($row['extension'] === 'aac') $mime = 'audio/aac';
                     
                     header('Content-Type: ' . $mime);
                     header('Content-Length: ' . strlen($row['archivo']));
