@@ -3,7 +3,6 @@
 
 <head>
     <meta charset="UTF-8">
-    <!-- Favicon personalizado -->
     <link rel="icon" type="image/png" href="assets/LogoTren.PNG">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consola de Control - Tren del Tayta Imbabura</title>
@@ -34,6 +33,7 @@
             <div class="logo">
                 <img src="assets/LogoTren.PNG" alt="Logo Tren del Tayta Imbabura">
             </div>
+            <h2 id="titulo">Consola de Audio</h2>
             <div class="user-info" id="user-info">
                 <span id="user-name"></span>
                 <span id="user-role"></span>
@@ -83,7 +83,6 @@
                         </div>
                     </div>
                     <div class="button-grid" id="general-grid">
-                        <!-- Los audios generales se cargarán dinámicamente -->
                     </div>
                 </div>
 
@@ -96,7 +95,6 @@
                         </div>
                     </div>
                     <div class="button-grid" id="train-grid">
-                        <!-- Los audios de tren se cargarán dinámicamente -->
                     </div>
                 </div>
             </section>
@@ -133,7 +131,7 @@
                     <input type="text" id="nueva-categoria" placeholder="Nombre de la nueva categoría">
                 </div>
                 <div class="form-group">
-                    <label for="audio-file">Archivo de audio:</label>
+                    <label for="audio-file">Archivo de audio (mp3/m4a):</label>
                     <input type="file" id="audio-file" name="audio" accept="audio/*" required>
                 </div>
                 <div class="form-actions">
