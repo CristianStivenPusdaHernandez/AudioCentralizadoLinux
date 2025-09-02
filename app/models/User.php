@@ -5,6 +5,16 @@ class User {
     public function __construct() {
         $this->db = Database::getInstance();
         $this->createTables();
+        $this->syncRolePermissions();
+    }
+    
+    private function syncRolePermissions() {
+        // Limpiar permisos existentes para operator
+        $this->db->query("DELETE rp FROM rol_permiso rp JOIN roles r ON rp.rol_id = r.id WHERE r.nombre = 'operator'");
+        
+        // Asignar permisos al rol operator
+        $this->db->query("INSERT IGNORE INTO rol_permiso (rol_id, permiso_id) 
+                         SELECT r.id, p.id FROM roles r, permisos p WHERE r.nombre = 'operator'");
     }
     
     private function createTables() {
@@ -46,22 +56,30 @@ class User {
     }
     
     private function insertDefaultData() {
-        // Insertar rol admin si no existe
-        $result = $this->db->query("SELECT COUNT(*) as count FROM roles WHERE nombre = 'admin'");
+        // Insertar permisos si no existen
+        $permisos = ['subir_audio', 'editar_audio', 'eliminar_audio'];
+        foreach ($permisos as $permiso) {
+            $this->db->query("INSERT IGNORE INTO permisos (nombre) VALUES ('$permiso')");
+        }
+        
+        // Insertar roles si no existen
+        $this->db->query("INSERT IGNORE INTO roles (nombre) VALUES ('admin')");
+        $this->db->query("INSERT IGNORE INTO roles (nombre) VALUES ('operator')");
+        $this->db->query("INSERT IGNORE INTO roles (nombre) VALUES ('viewer')");
+        
+        // Asignar permisos al rol admin (todos los permisos)
+        $this->db->query("INSERT IGNORE INTO rol_permiso (rol_id, permiso_id) 
+                         SELECT r.id, p.id FROM roles r, permisos p WHERE r.nombre = 'admin'");
+        
+        // Asignar permisos al rol operator (todos excepto gestión de usuarios)
+        $this->db->query("INSERT IGNORE INTO rol_permiso (rol_id, permiso_id) 
+                         SELECT r.id, p.id FROM roles r, permisos p WHERE r.nombre = 'operator'");
+        
+        // El rol viewer no tiene permisos especiales (solo reproducir)
+        
+        // Crear usuario admin por defecto si no existe
+        $result = $this->db->query("SELECT COUNT(*) as count FROM usuarios u JOIN roles r ON u.rol_id = r.id WHERE r.nombre = 'admin'");
         if ($result->fetch_assoc()['count'] == 0) {
-            $this->db->query("INSERT INTO roles (nombre) VALUES ('admin')");
-            
-            // Insertar permisos
-            $permisos = ['subir_audio', 'editar_audio', 'eliminar_audio'];
-            foreach ($permisos as $permiso) {
-                $this->db->query("INSERT IGNORE INTO permisos (nombre) VALUES ('$permiso')");
-            }
-            
-            // Asignar permisos al rol admin
-            $this->db->query("INSERT INTO rol_permiso (rol_id, permiso_id) 
-                             SELECT r.id, p.id FROM roles r, permisos p WHERE r.nombre = 'admin'");
-            
-            // Crear usuario admin por defecto
             $password = password_hash('admin', PASSWORD_DEFAULT);
             $this->db->query("INSERT INTO usuarios (usuario, password, rol_id) 
                              SELECT 'admin', '$password', id FROM roles WHERE nombre = 'admin'");
