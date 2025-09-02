@@ -1,5 +1,7 @@
 <?php
-// Cargar variables de entorno desde .env
+// Configuración de la aplicación
+
+// Cargar variables de entorno
 function loadEnv($path) {
     if (!file_exists($path)) {
         throw new Exception('.env file not found');
@@ -8,7 +10,7 @@ function loadEnv($path) {
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         if (strpos(trim($line), '#') === 0) {
-            continue; // Ignorar comentarios
+            continue;
         }
         
         list($name, $value) = explode('=', $line, 2);
@@ -23,30 +25,25 @@ function loadEnv($path) {
     }
 }
 
-// Cargar .env desde el directorio raíz
+// Cargar .env
 loadEnv(__DIR__ . '/../.env');
+
+// Configuraciones de la aplicación
+define('APP_NAME', 'App Estación');
+define('APP_VERSION', '2.0.0');
+define('DEBUG_MODE', getenv('DEBUG_MODE') === 'true');
 
 // Configuración de base de datos
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
 define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASSWORD', getenv('DB_PASSWORD') ?: '');
 define('DB_NAME', getenv('DB_NAME') ?: 'appestacion');
-define('DEBUG_MODE', getenv('DEBUG_MODE') === 'true');
 
-// Función para obtener conexión a la base de datos
-function getDBConnection() {
-    try {
-        $conn = new mysqli(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
-        if ($conn->connect_error) {
-            throw new Exception('Connection failed: ' . $conn->connect_error);
-        }
-        $conn->set_charset('utf8');
-        return $conn;
-    } catch (Exception $e) {
-        if (DEBUG_MODE) {
-            error_log('Database connection error: ' . $e->getMessage());
-        }
-        throw $e;
-    }
-}
-?>
+// Configuración de rutas
+define('BASE_URL', getenv('BASE_URL') ?: '/');
+define('API_PREFIX', '/api');
+
+// Configuración de sesiones
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_strict_mode', 1);
+ini_set('session.cookie_samesite', 'Lax');

@@ -4,10 +4,44 @@
     box-sizing: border-box;
 }
 
+.hidden {
+    display: none !important;
+}
+
+.server-status {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.offline {
+    background-color: #f44336;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #2c2c2c; /* Fondo oscuro */
-    color: #e0e0e0; /* Color de texto claro */
+    background-color: #2c2c2c; 
+    color: #e0e0e0; 
     min-height: 100vh;
     margin: 0;
     padding: 0;
@@ -17,80 +51,6 @@ body {
     width: 100vw;
     height: 100vh;
     overflow-y: auto;
-}
-
-/* Contenedor de Login */
-.login-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-    background-color: rgba(0, 0, 0, 0.85); /* Fondo oscuro con transparencia */
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
-}
-
-.login-container {
-    background: #333; /* Fondo más claro para el formulario */
-    padding: 2.5rem 3rem;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    text-align: center;
-    max-width: 400px;
-    width: 90%;
-}
-
-.login-container h2 {
-    color: #f0f0f0;
-    margin-bottom: 2rem;
-    font-size: 1.8rem;
-}
-
-.login-container input {
-    width: calc(100% - 20px);
-    padding: 12px 10px;
-    margin-bottom: 1rem;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background-color: #444;
-    color: #f0f0f0;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-}
-
-.login-container input::placeholder {
-    color: #bbb;
-}
-
-.login-container input:focus {
-    border-color: #1976D2;
-    outline: none;
-}
-
-.login-container button {
-    width: 100%;
-    padding: 12px 20px;
-    background-color: #1976D2;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.login-container button:hover {
-    background-color: #155bb5;
-}
-
-#mensaje-error {
-    color: #ff5252;
-    margin-top: 1rem;
-    font-weight: bold;
 }
 
 /* Estilos para la aplicación principal */
@@ -133,25 +93,24 @@ header {
     position: relative;
     left: -30px;
     text-align: center;
-
 }
 
 .user-info {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: #ccc;
+    color: #d6caca;
 }
 
 .user-info #user-name {
     font-weight: bold;
-    color: #f0f0f0;
+    color: #e9e0e0;
 }
 
 .icon-button {
     background: none;
     border: none;
-    color: #ccc;
+    color: #c6baba;
     font-size: 1.2rem;
     cursor: pointer;
     transition: color 0.3s ease;
@@ -218,6 +177,7 @@ main::-webkit-scrollbar-thumb:hover {
     border: 1px solid rgba(254, 108, 108, 0.1);
     box-sizing: border-box;
 }
+
 .audio-progress.active {
     display: flex;
 }
@@ -254,6 +214,27 @@ main::-webkit-scrollbar-thumb:hover {
     font-size: 1rem;
     color: #a71c1c;
     margin-bottom: 5px;
+}
+
+.stop-button {
+    background-color: #666;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 0 10px;
+}
+
+.stop-button:hover {
+    background-color: #555;
+    transform: scale(1.05);
 }
 
 .play-button.large {
@@ -332,7 +313,7 @@ main::-webkit-scrollbar-thumb:hover {
 
 .category-header h3 i {
     margin-right: 8px;
-    color: #ffc107; /* Color para los iconos de categoría */
+    color: #ffc107;
 }
 
 .category-buttons {
@@ -342,7 +323,7 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .category-header .reproducir-todo {
-    background-color: #007bff; /* Color azul */
+    background-color: #007bff;
     color: white;
     border: none;
     border-radius: 6px;
@@ -374,7 +355,7 @@ main::-webkit-scrollbar-thumb:hover {
 
 .button-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Columnas responsivas */
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 15px;
 }
 
@@ -403,7 +384,7 @@ main::-webkit-scrollbar-thumb:hover {
 
 .audio-button i {
     margin-right: 10px;
-    color: #1976D2; /* Icono de volumen */
+    color: #1976D2;
 }
 
 .audio-item .edit-button,
@@ -419,11 +400,11 @@ main::-webkit-scrollbar-thumb:hover {
 }
 
 .audio-item .edit-button:hover {
-    color: #ffc107; /* Amarillo para editar */
+    color: #ffc107;
 }
 
 .audio-item .delete-button:hover {
-    color: #ff5252; /* Rojo para eliminar */
+    color: #ff5252;
 }
 
 .fab {
@@ -433,7 +414,7 @@ main::-webkit-scrollbar-thumb:hover {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background-color: #00bcd4; /* Azul cian */
+    background-color: #00bcd4;
     color: white;
     font-size: 2rem;
     border: none;
@@ -448,146 +429,4 @@ main::-webkit-scrollbar-thumb:hover {
 .fab:hover {
     background-color: #0097a7;
     transform: scale(1.05);
-}
-
-/* Estilos para el modal */
-.modal {
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background-color: #333;
-    border-radius: 12px;
-    padding: 0;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #444;
-}
-
-.modal-header h3 {
-    color: #f0f0f0;
-    margin: 0;
-    font-size: 1.5rem;
-}
-
-.close {
-    color: #bbb;
-    font-size: 2rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-.close:hover {
-    color: #fff;
-}
-
-#audio-form {
-    padding: 20px;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    color: #f0f0f0;
-    margin-bottom: 8px;
-    font-weight: 500;
-}
-
-.form-group input,
-.form-group select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background-color: #444;
-    color: #f0f0f0;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-}
-
-.form-group input:focus,
-.form-group select:focus {
-    border-color: #1976D2;
-    outline: none;
-}
-
-.form-group input[type="file"] {
-    padding: 8px;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    margin-top: 30px;
-}
-
-.btn-cancel,
-.btn-submit {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.btn-cancel {
-    background-color: #666;
-    color: #f0f0f0;
-}
-
-.btn-cancel:hover {
-    background-color: #555;
-}
-
-.btn-submit {
-    background-color: #1976D2;
-    color: white;
-}
-
-.btn-submit:hover {
-    background-color: #155bb5;
-}
-
-.btn-submit:disabled {
-    background-color: #666;
-    cursor: not-allowed;
-}
-
-.edit-category-button {
-    background: none;
-    border: none;
-    color: #bbb;
-    font-size: 0.9rem;
-    padding: 6px 8px;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.edit-category-button:hover {
-    color: #ffc107;
-    background-color: rgba(255, 193, 7, 0.1);
 }

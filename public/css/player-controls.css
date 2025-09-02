@@ -21,12 +21,20 @@
     border-radius: 50%;
     width: 45px;
     height: 45px;
-    color: rgba(63, 240, 214, 0.7);
+    color: rgba(217, 226, 225, 0.7);
     cursor: pointer;
     transition: all 0.3s ease;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.repeat-button.hidden {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 .repeat-button:hover {
@@ -36,8 +44,16 @@
 }
 
 .repeat-button.active {
-    background: #2780e092;
-    color: rgb(66, 164, 213);
+    background: #4ca8af;
+    color: white;
+    box-shadow: 0 0 15px rgba(76, 175, 163, 0.5);
+    transform: scale(1.1);
+}
+
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .repeat-button i {

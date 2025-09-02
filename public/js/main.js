@@ -4,14 +4,14 @@ const loginScreen = document.getElementById('login-screen');
 
 // Muestra la pantalla de inicio de sesión
 const showLogin = () => {
-    loginScreen.style.display = 'flex'; // Usamos flex para centrar el contenido
-    appContainer.style.display = 'none';
+    loginScreen.style.display = 'flex';
+    appContainer.classList.add('hidden');
 };
 
 // Muestra la aplicación principal
 const showApp = (userData) => {
     loginScreen.style.display = 'none';
-    appContainer.style.display = 'grid'; // Usamos grid para el layout principal
+    appContainer.classList.remove('hidden');
     if (userData) {
         document.getElementById('user-name').textContent = userData.usuario;
         userSession = userData; // Guardar datos del usuario
@@ -19,9 +19,17 @@ const showApp = (userData) => {
         // Mostrar/ocultar FAB según permisos
         const fab = document.querySelector('.fab');
         if (userData.permisos && userData.permisos.includes('subir_audio')) {
-            fab.style.display = 'flex';
+            fab.classList.remove('hidden');
         } else {
-            fab.style.display = 'none';
+            fab.classList.add('hidden');
+        }
+        
+        // Mostrar botón de usuarios solo para administradores
+        const usersBtn = document.getElementById('users-btn');
+        if (userData.rol === 'admin') {
+            usersBtn.style.display = 'inline-block';
+        } else {
+            usersBtn.style.display = 'none';
         }
     }
     loadAudios(); // Cargar audios al mostrar la app
@@ -44,7 +52,7 @@ const getAudioDuration = (url) => {
 // Verifica la sesión al cargar la página
 const checkSession = async () => {
     try {
-        const response = await fetch('backend/login.php', { 
+        const response = await fetch('/App_Estacion/api/auth', { 
             method: 'GET',
             credentials: 'include'
         });
@@ -64,7 +72,7 @@ const checkSession = async () => {
 // Función para cargar audios
 const loadAudios = async () => {
     try {
-        const response = await fetch('backend/audios.php', { 
+        const response = await fetch('/App_Estacion/api/audios', { 
             method: 'GET',
             credentials: 'include'
         });
@@ -131,6 +139,31 @@ const loadAudios = async () => {
             });
         }
         
+        // Agregar botones de editar categoría para categorías predeterminadas si es admin
+        if (userSession && userSession.rol === 'admin') {
+            // Anuncios Generales
+            const generalCategoryButtons = document.querySelector('.category:first-of-type .category-buttons');
+            if (generalCategoryButtons && !generalCategoryButtons.querySelector('.edit-category-button')) {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-category-button';
+                editBtn.setAttribute('data-categoria', 'ANUNCIOS GENERALES');
+                editBtn.title = 'Editar categoría';
+                editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
+                generalCategoryButtons.insertBefore(editBtn, generalCategoryButtons.firstChild);
+            }
+            
+            // Anuncios del Tren
+            const trainCategoryButtons = document.querySelector('.category:nth-of-type(2) .category-buttons');
+            if (trainCategoryButtons && !trainCategoryButtons.querySelector('.edit-category-button')) {
+                const editBtn = document.createElement('button');
+                editBtn.className = 'edit-category-button';
+                editBtn.setAttribute('data-categoria', 'ANUNCIOS DEL TREN');
+                editBtn.title = 'Editar categoría';
+                editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
+                trainCategoryButtons.insertBefore(editBtn, trainCategoryButtons.firstChild);
+            }
+        }
+        
         console.log(`Cargando ${audios.length} audios`);
         audios.forEach(audio => {
             const audioItem = document.createElement('div');
@@ -180,7 +213,7 @@ const loadAudios = async () => {
                     customSection = document.createElement('div');
                     customSection.className = 'category';
                     customSection.setAttribute('data-categoria', audio.categoria);
-                    const canEditCategory = userSession && userSession.permisos && userSession.permisos.includes('editar_audio');
+                    const canEditCategory = userSession && userSession.rol === 'admin';
                     const editCategoryButton = canEditCategory ? `<button class="edit-category-button" data-categoria="${audio.categoria}" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>` : '';
                     
                     customSection.innerHTML = `
@@ -221,10 +254,12 @@ const loadAudios = async () => {
             }
         });
         
-        // Event listeners para botones de editar categoría (tanto predeterminadas como personalizadas)
-        document.querySelectorAll('.edit-category-button').forEach(btn => {
-            btn.addEventListener('click', () => editCategory(btn.dataset.categoria));
-        });
+        // Event listeners para botones de editar categoría (solo administradores)
+        if (userSession && userSession.rol === 'admin') {
+            document.querySelectorAll('.edit-category-button').forEach(btn => {
+                btn.addEventListener('click', () => editCategory(btn.dataset.categoria));
+            });
+        }
     } catch (error) {
         console.error('Error al obtener audios:', error);
     }
@@ -281,22 +316,16 @@ const hideProgressBar = () => {
     audioTitleEl.textContent = 'Selecciona un audio';
 };
 
-const playAudio = async (id, url, title = 'Audio') => {
+const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
     try {
-        // Detener audio actual antes de reproducir uno nuevo
-        if (isPlaying) {
-            await stopAudio();
-            // Esperar un momento para asegurar que el audio anterior se detuvo completamente
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
         
-        const response = await fetch('backend/player.php', {
+        const response = await fetch('/App_Estacion/api/player', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({ action: 'play', audio_id: id, repeat: isRepeating })
+            body: JSON.stringify({ audio_id: id, repeat: isRepeating, force_play: forcePlay })
         });
         
         if (!response.ok) {
@@ -304,6 +333,18 @@ const playAudio = async (id, url, title = 'Audio') => {
         }
         
         const result = await response.json();
+        
+        // Verificar si hay un audio reproduciéndose
+        if (result.audio_playing && !forcePlay) {
+            const userConfirmed = confirm(result.message);
+            if (userConfirmed) {
+                // Reproducir con fuerza, deteniendo el actual
+                return playAudio(id, url, title, true);
+            } else {
+                return; // No hacer nada si el usuario cancela
+            }
+        }
+        
         console.log('Audio reproduciéndose en servidor:', result.message);
         
         // Guardar información del audio actual
@@ -325,8 +366,7 @@ const playAudio = async (id, url, title = 'Audio') => {
         currentAudioTitle = audioTitle;
         updatePlayButton();
         
-        // Mostrar botón de repetición
-        document.getElementById('repeat-button').style.display = 'flex';
+        // El botón de repetición ya está siempre visible
         
     } catch (error) {
         console.error('Error de conexión:', error);
@@ -336,13 +376,13 @@ const playAudio = async (id, url, title = 'Audio') => {
 
 const stopAudio = async () => {
     try {
-        const response = await fetch('backend/player.php', {
+        const response = await fetch('/App_Estacion/api/player/stop', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({ action: 'stop' })
+            body: JSON.stringify({})
         });
         
         if (!response.ok) {
@@ -373,7 +413,7 @@ const stopAudio = async () => {
 // Verificar estado del reproductor cada 2 segundos
 const checkPlayerStatus = async () => {
     try {
-        const response = await fetch('backend/player_status.php', {
+        const response = await fetch('/App_Estacion/api/player/status', {
             method: 'GET',
             credentials: 'include'
         });
@@ -399,7 +439,7 @@ const checkPlayerStatus = async () => {
             const wasPlaying = isPlaying;
             const currentTitle = document.getElementById('audio-title').textContent;
             
-            // Actualizar interfaz según el estado
+            // Actualizar interfaz según el estado del servidor
             if (status.playing === true && status.title) {
                 const titleWithDuration = status.duration > 0 ? 
                     `🔊 ${status.title} (${formatTime(status.duration)})` : 
@@ -423,44 +463,81 @@ const checkPlayerStatus = async () => {
                     document.getElementById('total-time').textContent = 'Obteniendo duración...';
                 }
                 
+                // Actualizar estado global
                 isPlaying = true;
                 currentAudioTitle = status.title;
+                currentAudioId = null; // Limpiar para evitar conflictos
                 
-                // Sincronizar estado de repetición solo si cambió desde otro dispositivo
-                if (status.repeat !== undefined && status.repeat !== isRepeating) {
+                // El botón de repetición ya está siempre visible
+                const repeatButton = document.getElementById('repeat-button');
+                
+                // Sincronizar estado de repetición SIEMPRE
+                if (status.repeat !== undefined) {
                     isRepeating = status.repeat;
-                    const repeatButton = document.getElementById('repeat-button');
-                    if (repeatButton.style.display !== 'none') {
-                        if (isRepeating) {
-                            repeatButton.classList.add('active');
-                        } else {
-                            repeatButton.classList.remove('active');
-                        }
+                    if (isRepeating) {
+                        repeatButton.classList.add('active');
+                    } else {
+                        repeatButton.classList.remove('active');
+                    }
+                }
+            } else if (status.paused) {
+                // Audio pausado - mantener información pero cambiar estado
+                const titleWithDuration = status.duration > 0 ? 
+                    `⏸️ ${status.title} (${formatTime(status.duration)})` : 
+                    `⏸️ ${status.title}`;
+                
+                document.getElementById('audio-title').textContent = titleWithDuration;
+                document.getElementById('audio-progress').classList.add('active');
+                
+                // Mostrar progreso pausado
+                if (status.duration && status.duration > 0) {
+                    const progress = Math.min((status.position / status.duration) * 100, 100);
+                    document.getElementById('progress-fill').style.width = progress + '%';
+                    document.getElementById('current-time').textContent = formatTime(status.position || 0);
+                    document.getElementById('total-time').textContent = formatTime(status.duration || 0);
+                }
+                
+                // Actualizar estado global
+                isPlaying = false;
+                currentAudioTitle = status.title;
+                
+                // El botón de repetición ya está siempre visible
+                const repeatButton = document.getElementById('repeat-button');
+                
+                // Sincronizar estado de repetición
+                if (status.repeat !== undefined) {
+                    isRepeating = status.repeat;
+                    if (isRepeating) {
+                        repeatButton.classList.add('active');
+                    } else {
+                        repeatButton.classList.remove('active');
                     }
                 }
             } else {
-                // Si el audio terminó y está en modo repetición, reproducir de nuevo
-                if (wasPlaying && isRepeating && currentAudioId) {
-                    setTimeout(() => playAudio(currentAudioId, currentAudioUrl, currentAudioTitle), 500);
-                    return;
-                }
-                
-                // Si el audio terminó y está en modo repetición, reproducir de nuevo
-                if (wasPlaying && isRepeating && currentAudioId) {
-                    setTimeout(() => playAudio(currentAudioId, currentAudioUrl, currentAudioTitle), 500);
-                    return;
-                }
-                
-                // Solo limpiar si estaba reproduciendo y NO está en repetición
-                if (wasPlaying && !isRepeating) {
+                // Audio detenido completamente
+                if (wasPlaying) {
                     document.getElementById('audio-title').textContent = 'Selecciona un audio';
                     document.getElementById('audio-progress').classList.remove('active');
                     document.getElementById('progress-fill').style.width = '0%';
                     document.getElementById('current-time').textContent = '0:00';
                     document.getElementById('total-time').textContent = '0:00';
+                    
+                    // El botón de repetición permanece visible siempre
                 }
                 isPlaying = false;
                 currentAudioTitle = '';
+                currentAudioId = null;
+                
+                // Sincronizar estado de repetición
+                if (status.repeat !== undefined) {
+                    isRepeating = status.repeat;
+                    const repeatButton = document.getElementById('repeat-button');
+                    if (isRepeating) {
+                        repeatButton.classList.add('active');
+                    } else {
+                        repeatButton.classList.remove('active');
+                    }
+                }
             }
             updatePlayButton();
         }
@@ -485,31 +562,90 @@ const stopStatusCheck = () => {
     }
 };
 
-const togglePlayPause = () => {
+const togglePlayPause = async () => {
     if (isPlaying) {
-        stopAudio();
+        // Pausar audio
+        try {
+            const response = await fetch('/App_Estacion/api/player/pause', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                const result = await response.json();
+                console.log('Audio pausado:', result.message);
+            }
+        } catch (error) {
+            console.error('Error al pausar audio:', error);
+        }
     } else {
-        alert('Selecciona un audio para reproducir');
+        // Verificar si hay audio pausado para reanudar
+        try {
+            const statusResponse = await fetch('/App_Estacion/api/player/status', {
+                method: 'GET',
+                credentials: 'include'
+            });
+            
+            if (statusResponse.ok) {
+                const status = await statusResponse.json();
+                
+                if (status.paused) {
+                    // Reanudar audio pausado
+                    const response = await fetch('/App_Estacion/api/player/resume', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        console.log('Audio reanudado:', result.message);
+                    }
+                } else {
+                    alert('Selecciona un audio para reproducir');
+                }
+            }
+        } catch (error) {
+            console.error('Error al verificar estado:', error);
+            alert('Selecciona un audio para reproducir');
+        }
     }
 };
 
 const toggleRepeat = async () => {
-    isRepeating = !isRepeating;
-    const repeatButton = document.getElementById('repeat-button');
-    if (isRepeating) {
-        repeatButton.classList.add('active');
-    } else {
-        repeatButton.classList.remove('active');
-    }
+    const newRepeatState = !isRepeating;
     
-    // Enviar estado al servidor para sincronizar
     try {
-        await fetch('backend/player_status.php', {
+        // Enviar estado al servidor primero
+        const response = await fetch('/App_Estacion/api/player/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ repeat: isRepeating })
+            body: JSON.stringify({ repeat: newRepeatState })
         });
+        
+        if (response.ok) {
+            const result = await response.json();
+            
+            // Solo actualizar la interfaz si el servidor confirmó el cambio
+            isRepeating = newRepeatState;
+            const repeatButton = document.getElementById('repeat-button');
+            
+            if (isRepeating) {
+                repeatButton.classList.add('active');
+                console.log('Modo repetición activado');
+            } else {
+                repeatButton.classList.remove('active');
+                console.log('Modo repetición desactivado');
+            }
+        } else {
+            console.error('Error al cambiar estado de repetición');
+        }
     } catch (error) {
         console.error('Error sincronizando estado de repetición:', error);
     }
@@ -552,7 +688,7 @@ const editAudio = async (id) => {
     if (!newName) return;
     
     try {
-        const response = await fetch(`backend/audios.php?id=${id}`, {
+        const response = await fetch(`/App_Estacion/api/audios/${id}`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -578,7 +714,7 @@ const deleteAudio = async (id) => {
     if (!confirm('¿Está seguro de eliminar este audio?')) return;
     
     try {
-        const response = await fetch(`backend/audios.php?id=${id}`, {
+        const response = await fetch(`/App_Estacion/api/audios/${id}`, {
             method: 'DELETE',
             credentials: 'include'
         });
@@ -603,12 +739,11 @@ const editCategory = async (oldCategory) => {
     if (!newCategory || newCategory === oldCategory) return;
     
     try {
-        const response = await fetch('backend/audios.php', {
+        const response = await fetch('/App_Estacion/api/audios/category', {
             method: 'PATCH',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                action: 'edit_category',
                 old_category: oldCategory,
                 new_category: newCategory.toUpperCase()
             })
@@ -629,6 +764,62 @@ const editCategory = async (oldCategory) => {
     }
 };
 
+// Función para cargar usuarios
+const loadUsers = async () => {
+    try {
+        const response = await fetch('/App_Estacion/api/users', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+            
+            result.users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                userItem.innerHTML = `
+                    <div class="user-info">
+                        <strong>${user.usuario}</strong>
+                        <span class="user-role">${user.rol}</span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-danger" onclick="deleteUser(${user.id}, '${user.usuario}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                usersList.appendChild(userItem);
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando usuarios:', error);
+    }
+};
+
+// Función para eliminar usuario
+const deleteUser = async (id, username) => {
+    if (!confirm(`¿Está seguro de eliminar el usuario "${username}"?`)) return;
+    
+    try {
+        const response = await fetch(`/App_Estacion/api/users/${id}`, {
+            method: 'DELETE',
+            credentials: 'include'
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            loadUsers();
+            alert('Usuario eliminado exitosamente');
+        } else {
+            alert('Error: ' + (result.error || 'No se pudo eliminar el usuario'));
+        }
+    } catch (error) {
+        alert('Error de conexión');
+    }
+};
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
@@ -636,6 +827,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logout-btn');
     const fab = document.querySelector('.fab');
     const playButton = document.querySelector('.player-section .play-button');
+    const usersBtn = document.getElementById('users-btn');
+    const usersModal = document.getElementById('users-modal');
+    const userFormModal = document.getElementById('user-form-modal');
 
     // Manejar el envío del formulario de inicio de sesión
     loginForm.addEventListener('submit', async (e) => {
@@ -644,7 +838,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password').value;
 
         try {
-            const response = await fetch('backend/login.php', {
+            const response = await fetch('/App_Estacion/api/auth', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -671,11 +865,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // Manejar el cierre de sesión
     logoutBtn.addEventListener('click', async () => {
         stopStatusCheck();
-        await fetch('backend/logout.php');
+        await fetch('/App_Estacion/api/logout', { method: 'POST' });
         userSession = null;
         showLogin();
     });
 
+    // Botón de gestión de usuarios
+    usersBtn.addEventListener('click', () => {
+        loadUsers();
+        usersModal.classList.remove('hidden');
+    });
+    
+    // Cerrar modales de usuarios
+    document.getElementById('users-close').addEventListener('click', () => {
+        usersModal.classList.add('hidden');
+    });
+    
+    document.getElementById('user-form-close').addEventListener('click', () => {
+        userFormModal.classList.add('hidden');
+    });
+    
+    document.getElementById('user-form-cancel').addEventListener('click', () => {
+        userFormModal.classList.add('hidden');
+    });
+    
+    // Botón agregar usuario
+    document.getElementById('add-user-btn').addEventListener('click', () => {
+        document.getElementById('user-form-title').textContent = 'Agregar Usuario';
+        document.getElementById('user-form').reset();
+        userFormModal.classList.remove('hidden');
+    });
+    
+    // Formulario de usuario
+    document.getElementById('user-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const userData = {
+            usuario: formData.get('usuario'),
+            password: formData.get('password'),
+            rol: formData.get('rol')
+        };
+        
+        try {
+            const response = await fetch('/App_Estacion/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(userData)
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                userFormModal.classList.add('hidden');
+                loadUsers();
+                alert('Usuario creado exitosamente');
+            } else {
+                alert('Error: ' + (result.error || 'No se pudo crear el usuario'));
+            }
+        } catch (error) {
+            alert('Error de conexión');
+        }
+    });
+    
     // Inicia la verificación de la sesión al cargar la página
     checkSession();
 
@@ -691,10 +943,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mostrar/ocultar campo de nueva categoría
     categorySelect.addEventListener('change', () => {
         if (categorySelect.value === 'nueva') {
-            nuevaCategoriaGroup.style.display = 'block';
+            nuevaCategoriaGroup.classList.remove('nueva-categoria-group');
             nuevaCategoriaInput.required = true;
         } else {
-            nuevaCategoriaGroup.style.display = 'none';
+            nuevaCategoriaGroup.classList.add('nueva-categoria-group');
             nuevaCategoriaInput.required = false;
             nuevaCategoriaInput.value = '';
         }
@@ -702,12 +954,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Botón flotante para agregar audio
     fab.addEventListener('click', () => {
-        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
     });
 
     // Cerrar modal
     const closeModal = () => {
-        modal.style.display = 'none';
+        modal.classList.add('hidden');
         audioForm.reset();
     };
 
@@ -744,7 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.set('categoria', nuevaCategoria.toUpperCase());
             }
             
-            const response = await fetch('backend/audios.php', {
+            const response = await fetch('/App_Estacion/api/audios', {
                 method: 'POST',
                 credentials: 'include',
                 body: formData
@@ -781,6 +1033,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Botón de play/pause global
     playButton.addEventListener('click', togglePlayPause);
     
+    // Botón de stop
+    const stopButton = document.getElementById('stop-button');
+    stopButton.addEventListener('click', stopAudio);
+    
     // Botón de repetición
     const repeatButton = document.getElementById('repeat-button');
     repeatButton.addEventListener('click', toggleRepeat);
@@ -792,23 +1048,40 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.audio-item').forEach(item => {
             const audioName = item.querySelector('.audio-button').textContent.toLowerCase();
             if (audioName.includes(searchTerm)) {
-                item.style.display = 'flex';
+                item.classList.remove('hidden');
             } else {
-                item.style.display = 'none';
+                item.classList.add('hidden');
             }
         });
         
         // Ocultar categorías vacías
         document.querySelectorAll('.category').forEach(category => {
-            const visibleItems = category.querySelectorAll('.audio-item[style*="flex"], .audio-item:not([style*="none"])');
+            const visibleItems = category.querySelectorAll('.audio-item:not(.hidden)');
             if (visibleItems.length === 0 && searchTerm !== '') {
-                category.style.display = 'none';
+                category.classList.add('hidden');
             } else {
-                category.style.display = 'block';
+                category.classList.remove('hidden');
             }
         });
     });
     
     // Barra de progreso solo visual (no clickeable)
     // El audio se reproduce completamente en el servidor
+
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('toggle-password');
+    const eyeIcon = document.getElementById('eye-icon');
+    if (togglePassword && passwordInput && eyeIcon) {
+        togglePassword.addEventListener('click', () => {
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.remove('fa-eye-slash');
+                eyeIcon.classList.add('fa-eye');
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('fa-eye');
+                eyeIcon.classList.add('fa-eye-slash');
+            }
+        });
+    }
 });

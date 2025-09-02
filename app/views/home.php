@@ -1,34 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="assets/LogoTren.PNG">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consola de Control - Tren del Tayta Imbabura</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/modals.css">
     <link rel="stylesheet" href="css/player-controls.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
+    <?php include 'components/login.php'; ?>
 
-    <div id="login-screen" class="login-wrapper">
-        <div class="login-container">
-            <h2>Iniciar Sesión</h2>
-            <form id="login-form">
-                <input type="text" id="usuario" placeholder="Usuario" required>
-                <input type="password" id="password" placeholder="Contraseña" required>
-                <button type="submit">Iniciar Sesión</button>
-            </form>
-            <div id="mensaje-error"></div>
-        </div>
-    </div>
-
-    <div class="app-container" style="display: none;">
+    <div class="app-container hidden">
         <header>
             <div class="logo">
                 <img src="assets/LogoTren.PNG" alt="Logo Tren del Tayta Imbabura">
@@ -37,6 +26,9 @@
             <div class="user-info" id="user-info">
                 <span id="user-name"></span>
                 <span id="user-role"></span>
+                <button id="users-btn" class="icon-button" style="display: none;" title="Gestionar usuarios">
+                    <i class="fa-solid fa-users"></i>
+                </button>
                 <button id="logout-btn" class="icon-button">
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </button>
@@ -46,6 +38,9 @@
         <main>
             <section class="player-section">
                 <div class="player-controls">
+                    <button class="stop-button" id="stop-button" title="Detener audio">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
                     <button class="play-button large">
                         <i class="fa-solid fa-play"></i>
                     </button>
@@ -62,8 +57,8 @@
                         <span id="current-time">0:00</span>
                         <span id="total-time">0:00</span>
                     </div>
-                    <div class="server-status" style="text-align: center; color: #666; font-size: 12px; margin-top: 5px;">
-                        Servidor
+                    <div class="server-status" id="connection-status">
+                        <span class="status-dot"></span> Servidor
                     </div>
                 </div>
             </section>
@@ -78,24 +73,20 @@
                     <div class="category-header">
                         <h3><i class="fa-solid fa-play"></i> Anuncios Generales</h3>
                         <div class="category-buttons">
-                            <button class="edit-category-button" data-categoria="ANUNCIOS GENERALES" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>
                             <button class="reproducir-todo">Reproducir Todo</button>
                         </div>
                     </div>
-                    <div class="button-grid" id="general-grid">
-                    </div>
+                    <div class="button-grid" id="general-grid"></div>
                 </div>
 
                 <div class="category">
                     <div class="category-header">
                         <h3><i class="fa-solid fa-train"></i> Anuncios de Tren</h3>
                         <div class="category-buttons">
-                            <button class="edit-category-button" data-categoria="ANUNCIOS DEL TREN" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>
                             <button class="reproducir-todo">Reproducir Todo</button>
                         </div>
                     </div>
-                    <div class="button-grid" id="train-grid">
-                    </div>
+                    <div class="button-grid" id="train-grid"></div>
                 </div>
             </section>
         </main>
@@ -105,44 +96,8 @@
         </button>
     </div>
 
-    <!-- Modal para agregar audio -->
-    <div id="audio-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Agregar Nuevo Audio</h3>
-                <span class="close">&times;</span>
-            </div>
-            <form id="audio-form" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="audio-name">Nombre del audio:</label>
-                    <input type="text" id="audio-name" name="nombre" required>
-                </div>
-                <div class="form-group">
-                    <label for="audio-category">Categoría:</label>
-                    <select id="audio-category" name="categoria" required>
-                        <option value="">Seleccionar categoría</option>
-                        <option value="ANUNCIOS GENERALES">Anuncios Generales</option>
-                        <option value="ANUNCIOS DEL TREN">Anuncios del Tren</option>
-                        <option value="nueva">+ Crear nueva categoría</option>
-                    </select>
-                </div>
-                <div class="form-group" id="nueva-categoria-group" style="display: none;">
-                    <label for="nueva-categoria">Nueva categoría:</label>
-                    <input type="text" id="nueva-categoria" placeholder="Nombre de la nueva categoría">
-                </div>
-                <div class="form-group">
-                    <label for="audio-file">Archivo de audio (mp3/m4a):</label>
-                    <input type="file" id="audio-file" name="audio" accept="audio/*" required>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel">Cancelar</button>
-                    <button type="submit" class="btn-submit">Subir Audio</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <?php include 'components/modals.php'; ?>
 
     <script src="js/main.js"></script>
 </body>
-
 </html>
