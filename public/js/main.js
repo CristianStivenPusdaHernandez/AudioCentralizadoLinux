@@ -71,9 +71,19 @@ const checkSession = async () => {
 };
 
 // Función para cargar audios
-const loadAudios = async () => {
+const loadAudios = async (sortBy = 'nombre', order = 'asc', category = null) => {
     try {
-        const response = await fetch('/App_Estacion/api/audios', { 
+        // Construir URL con parámetros
+        let url = '/App_Estacion/api/audios?';
+        const params = new URLSearchParams();
+        params.append('sort', sortBy);
+        params.append('order', order);
+        if (category) {
+            params.append('category', category);
+        }
+        url += params.toString();
+        
+        const response = await fetch(url, { 
             method: 'GET',
             credentials: 'include'
         });
@@ -137,6 +147,21 @@ const loadAudios = async () => {
                     option.className = 'dynamic-option';
                     categorySelect.insertBefore(option, categorySelect.lastElementChild);
                 }
+            });
+        }
+        
+        // Poblar filtro de categorías
+        const categoryFilterSelect = document.getElementById('category-filter');
+        if (categoryFilterSelect) {
+            const dynamicOptions = categoryFilterSelect.querySelectorAll('.dynamic-option');
+            dynamicOptions.forEach(option => option.remove());
+            
+            categorias.forEach(categoria => {
+                const option = document.createElement('option');
+                option.value = categoria;
+                option.textContent = categoria;
+                option.className = 'dynamic-option';
+                categoryFilterSelect.appendChild(option);
             });
         }
         
@@ -1086,4 +1111,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Event listeners para filtros
+    const sortSelect = document.getElementById('sort-select');
+    const orderSelect = document.getElementById('order-select');
+    const categoryFilter = document.getElementById('category-filter');
+
+    if (sortSelect && orderSelect && categoryFilter) {
+        const applyFilters = () => {
+            const sortBy = sortSelect.value;
+            const order = orderSelect.value;
+            const category = categoryFilter.value || null;
+            loadAudios(sortBy, order, category);
+        };
+
+        sortSelect.addEventListener('change', applyFilters);
+        orderSelect.addEventListener('change', applyFilters);
+        categoryFilter.addEventListener('change', applyFilters);
+    }
+
 });

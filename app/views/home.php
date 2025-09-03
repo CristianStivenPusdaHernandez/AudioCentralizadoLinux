@@ -69,6 +69,31 @@
                     <input type="text" placeholder="Buscar anuncio...">
                 </div>
 
+                <!--Filtros-->
+                <div class="filter-controls">
+                    <div class="filter-group">
+                        <label for="sort-select">Ordenar por:</label>
+                        <select id="sort-select">
+                            <option value="nombre">Nombre</option>
+                            <option value="categoria">Categoría</option>
+                            <option value="fecha_subida">Fecha</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="order-select">Orden:</label>
+                        <select id="order-select">
+                            <option value="asc">Ascendente</option>
+                            <option value="desc">Descendente</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="category-filter">Categoría:</label>
+                        <select id="category-filter">
+                            <option value="">Todas</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="category">
                     <div class="category-header">
                         <h3><i class="fa-solid fa-play"></i> Anuncios Generales</h3>
