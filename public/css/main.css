@@ -1,0 +1,432 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.server-status {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #4CAF50;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.offline {
+    background-color: #f44336;
+    animation: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #2c2c2c; 
+    color: #e0e0e0; 
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Estilos para la aplicación principal */
+.app-container {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 1200px;
+    height: 90vh;
+    padding: 20px;
+    gap: 20px;
+    background-color: #1e1e1e;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+    margin: 0 auto;
+    align-self: center;
+    box-sizing: border-box;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #444; 
+}
+
+.logo img {
+    height: 60px; 
+    width: auto;
+    border-radius: 8px;
+}
+
+#titulo {
+    color: #f0f0f0;
+    font-size: 1.5rem;
+    margin-left: 15px;
+    position: relative;
+    left: -30px;
+    text-align: center;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #d6caca;
+}
+
+.user-info #user-name {
+    font-weight: bold;
+    color: #e9e0e0;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    color: #c6baba;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.icon-button:hover {
+    color: #fff;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 0;
+    overflow-y: auto;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+main::-webkit-scrollbar {
+    width: 12px;
+}
+
+main::-webkit-scrollbar-track {
+    background: #2c2c2c;
+}
+
+main::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 6px;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+    background: #777;
+}
+
+.player-section {
+    background-color: #333;
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 230px; 
+    gap: 15px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.audio-progress {
+    width: calc(100% - 40px);
+    max-width: 400px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0 auto;
+    padding: 5px 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(254, 108, 108, 0.1);
+    box-sizing: border-box;
+}
+
+.audio-progress.active {
+    display: flex;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: #222;
+    border-radius: 5px;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 0 4px #1976D2, 0 0 2px #000;
+    margin-top: 4px;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #1976D2;
+    border-radius: 5px;
+    width: 0%;
+    transition: width 0.1s ease;
+    box-shadow: 0 0 6px #1976D2;
+}
+
+.time-display {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #b40f0f;
+}
+
+.audio-title {
+    text-align: center;
+    font-size: 1rem;
+    color: #a71c1c;
+    margin-bottom: 5px;
+}
+
+.stop-button {
+    background-color: #666;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 0 10px;
+}
+
+.stop-button:hover {
+    background-color: #555;
+    transform: scale(1.05);
+}
+
+.play-button.large {
+    background-color: #ff0000;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin: 15px 30;
+}
+
+.play-button.large:hover {
+    background-color: #cc0000;
+    transform: scale(1.05);
+}
+
+.announcements-section {
+    background-color: #333;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background-color: #444;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 20px;
+}
+
+.search-bar i {
+    color: #bbb;
+    margin-right: 10px;
+}
+
+.search-bar input {
+    flex-grow: 1;
+    border: none;
+    background: none;
+    color: #f0f0f0;
+    font-size: 1rem;
+    padding: 5px 0;
+}
+
+.search-bar input:focus {
+    outline: none;
+}
+
+.category {
+    margin-bottom: 25px;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+}
+
+.category-header h3 {
+    color: #f0f0f0;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+}
+
+.category-header h3 i {
+    margin-right: 8px;
+    color: #ffc107;
+}
+
+.category-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.category-header .reproducir-todo {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.category-header .reproducir-todo:hover {
+    background-color: #0056b3;
+}
+
+.edit-category-button {
+    background: none;
+    border: none;
+    color: #bbb;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.edit-category-button:hover {
+    color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.audio-item {
+    background-color: #444;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.audio-button {
+    flex-grow: 1;
+    background: none;
+    border: none;
+    color: #f0f0f0;
+    font-size: 1rem;
+    text-align: left;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.audio-button i {
+    margin-right: 10px;
+    color: #1976D2;
+}
+
+.audio-item .edit-button,
+.audio-item .delete-button {
+    background: none;
+    border: none;
+    color: #bbb;
+    font-size: 0.9rem;
+    margin-left: 8px;
+    padding: 5px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.audio-item .edit-button:hover {
+    color: #ffc107;
+}
+
+.audio-item .delete-button:hover {
+    color: #ff5252;
+}
+
+.fab {
+    position: fixed;
+    bottom: 30px;
+    right: 0px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #00bcd4;
+    color: white;
+    font-size: 2rem;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.fab:hover {
+    background-color: #0097a7;
+    transform: scale(1.05);
+}

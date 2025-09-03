@@ -1,0 +1,6 @@
+Options -Indexes
+
+# Redirigir todo a la carpeta public
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]

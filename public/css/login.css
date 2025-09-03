@@ -1,0 +1,90 @@
+#toggle-password {
+    position: absolute;
+    right: 5%;
+    top: 40%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #b0a8a8;
+}
+
+.password-container {
+    position: relative;
+}
+
+.password-input {
+    padding-right: 40px !important;
+}
+
+/* Contenedor de Login */
+.login-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85); 
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+.login-container {
+    background: #333;
+    padding: 2.5rem 3rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+}
+
+.login-container h2 {
+    color: #f0f0f0;
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+}
+
+.login-container input {
+    width: calc(100% - 20px);
+    padding: 12px 10px;
+    margin-bottom: 1rem;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background-color: #444;
+    color: #f0f0f0;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.login-container input::placeholder {
+    color: #bbb;
+}
+
+.login-container input:focus {
+    border-color: #1976D2;
+    outline: none;
+}
+
+.login-container button {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #1976D2;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.login-container button:hover {
+    background-color: #155bb5;
+}
+
+#mensaje-error {
+    color: #ff5252;
+    margin-top: 1rem;
+    font-weight: bold;
+}
