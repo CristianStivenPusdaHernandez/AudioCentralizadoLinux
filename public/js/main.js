@@ -32,7 +32,10 @@ const showApp = (userData) => {
         } else {
             usersBtn.style.display = 'none';
         }
-    }
+
+
+
+}
     loadAudios(); // Cargar audios al mostrar la app
     startStatusCheck(); // Iniciar verificación de estado
 };
@@ -260,7 +263,7 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
                 categoria = 'ANUNCIOS DEL TREN';
             }
             if (categoria) {
-                btn.addEventListener('click', () => playAllCategory(categoria));
+                btn.addEventListener('click', () => playAllCategory(categoria, btn));
             }
         });
         
@@ -287,6 +290,9 @@ let audiosByCategory = {
     'ANUNCIOS DEL TREN': []
 };
 let statusCheckInterval = null;
+let playAllInterval = null;
+let isPlayingAll = false;
+let currentPlayAllButton = null;
 
 const updatePlayButton = () => {
     const playButton = document.querySelector('.player-section .play-button i');
@@ -386,6 +392,19 @@ const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
 
 const stopAudio = async () => {
     try {
+        // Detener secuencia "reproducir todo"
+        isPlayingAll = false;
+        if (playAllInterval) {
+            clearInterval(playAllInterval);
+            playAllInterval = null;
+        }
+        
+        // Resetear botón "Reproducir Todo"
+        if (currentPlayAllButton) {
+            currentPlayAllButton.classList.remove('active');
+            currentPlayAllButton = null;
+        }
+        
         const response = await fetch('/App_Estacion/api/player/stop', {
             method: 'POST',
             headers: {
@@ -405,7 +424,7 @@ const stopAudio = async () => {
         // Actualizar interfaz inmediatamente
         isPlaying = false;
         currentAudioTitle = '';
-        currentAudioId = null; // Limpiar ID para evitar repetición
+        currentAudioId = null;
         updatePlayButton();
         hideProgressBar();
         
@@ -574,7 +593,11 @@ const stopStatusCheck = () => {
 
 const togglePlayPause = async () => {
     if (isPlaying) {
-        // Pausar audio
+        // Pausar audio y secuencia si está activa
+        if (playAllInterval) {
+            clearInterval(playAllInterval);
+            playAllInterval = null;
+        }
         try {
             const response = await fetch('/App_Estacion/api/player/pause', {
                 method: 'POST',
@@ -583,7 +606,6 @@ const togglePlayPause = async () => {
                 },
                 credentials: 'include'
             });
-            
             if (response.ok) {
                 const result = await response.json();
                 console.log('Audio pausado:', result.message);
@@ -598,10 +620,8 @@ const togglePlayPause = async () => {
                 method: 'GET',
                 credentials: 'include'
             });
-            
             if (statusResponse.ok) {
                 const status = await statusResponse.json();
-                
                 if (status.paused) {
                     // Reanudar audio pausado
                     const response = await fetch('/App_Estacion/api/player/resume', {
@@ -611,10 +631,73 @@ const togglePlayPause = async () => {
                         },
                         credentials: 'include'
                     });
-                    
                     if (response.ok) {
                         const result = await response.json();
                         console.log('Audio reanudado:', result.message);
+                        // Reanudar secuencia si estaba activa
+                        if (isPlayingAll && !playAllInterval) {
+                            // Buscar la categoría y el índice actual
+                            let categoriaActual = null;
+                            let currentIndex = null;
+                            // Buscar el audio actual en las categorías
+                            for (const [cat, audios] of Object.entries(audiosByCategory)) {
+                                const idx = audios.findIndex(a => a.id === currentAudioId);
+                                if (idx !== -1) {
+                                    categoriaActual = cat;
+                                    currentIndex = idx;
+                                    break;
+                                }
+                            }
+                            if (categoriaActual !== null && currentIndex !== null) {
+                                // Definir playNext local para continuar la secuencia
+                                const audios = audiosByCategory[categoriaActual];
+                                const playNext = async () => {
+                                    if (!isPlayingAll || currentIndex >= audios.length) {
+                                        isPlayingAll = false;
+                                        return;
+                                    }
+                                    // Esperar a que termine el audio antes de reproducir el siguiente
+                                    playAllInterval = setInterval(async () => {
+                                        try {
+                                            const statusResponse = await fetch('/App_Estacion/api/player/status', {
+                                                method: 'GET',
+                                                credentials: 'include'
+                                            });
+                                            if (statusResponse.ok) {
+                                                const status = await statusResponse.json();
+                                                if (status.paused) {
+                                                    return;
+                                                }
+                                                if (!status.playing && !status.paused && isPlayingAll) {
+                                                    clearInterval(playAllInterval);
+                                                    playAllInterval = null;
+                                                    currentIndex++;
+                                                    if (currentIndex < audios.length) {
+                                                        setTimeout(playNext, 500);
+                                                    } else {
+                                                        isPlayingAll = false;
+                                                    }
+                                                }
+                                            }
+                                        } catch (error) {
+                                            if (!isPlaying || !isPlayingAll) {
+                                                clearInterval(playAllInterval);
+                                                playAllInterval = null;
+                                                if (isPlayingAll) {
+                                                    currentIndex++;
+                                                    if (currentIndex < audios.length) {
+                                                        setTimeout(playNext, 500);
+                                                    } else {
+                                                        isPlayingAll = false;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }, 1000);
+                                };
+                                playNext();
+                            }
+                        }
                     }
                 } else {
                     alert('Selecciona un audio para reproducir');
@@ -661,7 +744,7 @@ const toggleRepeat = async () => {
     }
 };
 
-const playAllCategory = async (categoria) => {
+const playAllCategory = async (categoria, buttonElement) => {
     const audios = audiosByCategory[categoria];
     if (!audios || audios.length === 0) {
         alert('No hay audios en esta categoría');
@@ -674,22 +757,83 @@ const playAllCategory = async (categoria) => {
         await new Promise(resolve => setTimeout(resolve, 200));
     }
     
+    // Activar botón
+    if (currentPlayAllButton) {
+        currentPlayAllButton.classList.remove('active');
+    }
+    currentPlayAllButton = buttonElement;
+    buttonElement.classList.add('active');
+    
+    isPlayingAll = true;
     let currentIndex = 0;
+    // Quitar la clase activa de todos los botones
+    document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
+    // Buscar el botón correcto según la categoría
+    let playAllBtn = null;
+    let categorySection = document.querySelector(`[data-categoria="${categoria}"]`);
+    if (categorySection) {
+        playAllBtn = categorySection.querySelector('.reproducir-todo');
+    } else {
+        // Para Anuncios Generales y Anuncios del Tren
+        if (categoria === 'ANUNCIOS GENERALES') {
+            const generalSection = document.querySelector('.category:first-of-type');
+            if (generalSection) playAllBtn = generalSection.querySelector('.reproducir-todo');
+        } else if (categoria === 'ANUNCIOS DEL TREN') {
+            const trainSection = document.querySelector('.category:nth-of-type(2)');
+            if (trainSection) playAllBtn = trainSection.querySelector('.reproducir-todo');
+        }
+    }
+    if (playAllBtn) playAllBtn.classList.add('active-playall');
+
     const playNext = async () => {
-        if (currentIndex < audios.length) {
-            await playAudio(audios[currentIndex].id, audios[currentIndex].url, audios[currentIndex].nombre);
-            
-            // Esperar a que termine el audio antes de reproducir el siguiente
-            const checkIfFinished = setInterval(async () => {
-                if (!isPlaying) {
-                    clearInterval(checkIfFinished);
-                    currentIndex++;
-                    if (currentIndex < audios.length) {
-                        setTimeout(playNext, 500);
+        if (!isPlayingAll || currentIndex >= audios.length) {
+            isPlayingAll = false;
+            // Quitar color al terminar
+            document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
+            return;
+        }
+        await playAudio(audios[currentIndex].id, audios[currentIndex].url, audios[currentIndex].nombre);
+        playAllInterval = setInterval(async () => {
+            try {
+                const statusResponse = await fetch('/App_Estacion/api/player/status', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                if (statusResponse.ok) {
+                    const status = await statusResponse.json();
+                    if (status.paused) {
+                        return;
+                    }
+                    if (!status.playing && !status.paused && isPlayingAll) {
+                        clearInterval(playAllInterval);
+                        playAllInterval = null;
+                        currentIndex++;
+                        if (currentIndex < audios.length) {
+                            setTimeout(playNext, 500);
+                        } else {
+                            isPlayingAll = false;
+                            // Quitar color al terminar
+                            document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
+                        }
                     }
                 }
-            }, 1000);
-        }
+            } catch (error) {
+                if (!isPlaying || !isPlayingAll) {
+                    clearInterval(playAllInterval);
+                    playAllInterval = null;
+                    if (isPlayingAll) {
+                        currentIndex++;
+                        if (currentIndex < audios.length) {
+                            setTimeout(playNext, 500);
+                        } else {
+                            isPlayingAll = false;
+                            // Quitar color al terminar
+                            document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
+                        }
+                    }
+                }
+            }
+        }, 1000);
     };
     playNext();
 };
@@ -818,7 +962,6 @@ const deleteUser = async (id, username) => {
             method: 'DELETE',
             credentials: 'include'
         });
-        
         const result = await response.json();
         if (result.success) {
             loadUsers();
@@ -1095,6 +1238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
     // Event listeners para filtros
     const sortSelect = document.getElementById('sort-select');
     const orderSelect = document.getElementById('order-select');
@@ -1111,3 +1255,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+

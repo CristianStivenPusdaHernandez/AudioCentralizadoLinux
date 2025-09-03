@@ -112,7 +112,7 @@ class AudioController extends Controller {
         
         // Solo administradores y operadores pueden editar audios
         if ($_SESSION['rol'] !== 'administrador' && $_SESSION['rol'] !== 'operador') {
-            $this->jsonResponse(['error' => 'No tienes permisos para renombrar audios'], 403);
+            $this->jsonResponse(['error' => 'No tienes permisos para editar audios'], 403);
         }
         
         parse_str(file_get_contents('php://input'), $data);
