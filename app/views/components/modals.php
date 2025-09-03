@@ -72,9 +72,9 @@
             <div class="form-group">
                 <label for="user-role">Rol:</label>
                 <select id="user-role" name="rol" required>
-                    <option value="admin">Administrador</option>
-                    <option value="operator">Operador</option>
-                    <option value="viewer">Solo lectura</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="operador">Operador</option>
+                    <option value="reproductor">Solo lectura</option>
                 </select>
             </div>
             <div class="form-actions">

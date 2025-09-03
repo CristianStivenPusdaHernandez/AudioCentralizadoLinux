@@ -4,41 +4,6 @@ class Audio {
     
     public function __construct() {
         $this->db = Database::getInstance();
-        $this->createTableIfNotExists();
-        $this->addSampleData();
-    }
-    
-    private function createTableIfNotExists() {
-        $sql = "CREATE TABLE IF NOT EXISTS audios (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(255) NOT NULL,
-            archivo LONGBLOB NOT NULL,
-            extension VARCHAR(10) NOT NULL,
-            categoria VARCHAR(50) NOT NULL,
-            fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )";
-        $this->db->query($sql);
-    }
-    
-    private function addSampleData() {
-        $result = $this->db->query("SELECT COUNT(*) as count FROM audios");
-        $count = $result->fetch_assoc()['count'];
-        
-        if ($count == 0) {
-            $ejemplos = [
-                ['Bienvenida', 'ANUNCIOS GENERALES', 'm4a'],
-                ['Tren 253', 'ANUNCIOS DEL TREN', 'm4a'],
-                ['Tren 254', 'ANUNCIOS DEL TREN', 'm4a'],
-                ['Permanecer en sus asientos', 'ANUNCIOS GENERALES', 'm4a']
-            ];
-            
-            foreach ($ejemplos as $ejemplo) {
-                $stmt = $this->db->prepare("INSERT INTO audios (nombre, archivo, extension, categoria) VALUES (?, ?, ?, ?)");
-                $archivo_vacio = '';
-                $stmt->bind_param('ssss', $ejemplo[0], $archivo_vacio, $ejemplo[2], $ejemplo[1]);
-                $stmt->execute();
-            }
-        }
     }
     
     public function getAll() {
