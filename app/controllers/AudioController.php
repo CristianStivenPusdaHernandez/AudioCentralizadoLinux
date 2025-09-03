@@ -94,7 +94,7 @@ class AudioController extends Controller {
         $this->requireLogin();
         
         // Solo administradores pueden editar categorías
-        if ($_SESSION['rol'] !== 'admin') {
+        if ($_SESSION['rol'] !== 'administrador') {
             $this->jsonResponse(['error' => 'Solo los administradores pueden editar categorías'], 403);
         }
         
@@ -145,7 +145,7 @@ class AudioController extends Controller {
         $this->requireLogin();
         
         // Solo administradores pueden editar categorías
-        if ($_SESSION['rol'] !== 'admin') {
+        if ($_SESSION['rol'] !== 'administrador') {
             $this->jsonResponse(['error' => 'Solo los administradores pueden editar categorías'], 403);
         }
         

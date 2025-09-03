@@ -5,7 +5,7 @@ class UserController extends Controller {
         $this->requireLogin();
         
         // Solo administradores pueden gestionar usuarios
-        if ($_SESSION['rol'] !== 'admin') {
+        if ($_SESSION['rol'] !== 'administrador') {
             $this->jsonResponse(['error' => 'Solo los administradores pueden gestionar usuarios'], 403);
         }
         
@@ -22,7 +22,7 @@ class UserController extends Controller {
         $this->requireLogin();
         
         // Solo administradores pueden crear usuarios
-        if ($_SESSION['rol'] !== 'admin') {
+        if ($_SESSION['rol'] !== 'administrador') {
             $this->jsonResponse(['error' => 'Solo los administradores pueden crear usuarios'], 403);
         }
         
@@ -46,7 +46,7 @@ class UserController extends Controller {
         $this->requireLogin();
         
         // Solo administradores pueden eliminar usuarios
-        if ($_SESSION['rol'] !== 'admin') {
+        if ($_SESSION['rol'] !== 'administrador') {
             $this->jsonResponse(['error' => 'Solo los administradores pueden eliminar usuarios'], 403);
         }
         

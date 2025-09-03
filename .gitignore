@@ -8,3 +8,4 @@
 # Archivos del sistema
 .DS_Store
 Thumbs.db
+config/player_state.json

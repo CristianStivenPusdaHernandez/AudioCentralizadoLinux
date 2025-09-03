@@ -26,7 +26,7 @@ const showApp = (userData) => {
         
         // Mostrar botón de usuarios solo para administradores
         const usersBtn = document.getElementById('users-btn');
-        if (userData.rol === 'admin') {
+        if (userData.rol === 'administrador') {
             usersBtn.style.display = 'inline-block';
         } else {
             usersBtn.style.display = 'none';
@@ -140,7 +140,7 @@ const loadAudios = async () => {
         }
         
         // Agregar botones de editar categoría para categorías predeterminadas si es admin
-        if (userSession && userSession.rol === 'admin') {
+        if (userSession && userSession.rol === 'administrador') {
             // Anuncios Generales
             const generalCategoryButtons = document.querySelector('.category:first-of-type .category-buttons');
             if (generalCategoryButtons && !generalCategoryButtons.querySelector('.edit-category-button')) {
@@ -213,7 +213,7 @@ const loadAudios = async () => {
                     customSection = document.createElement('div');
                     customSection.className = 'category';
                     customSection.setAttribute('data-categoria', audio.categoria);
-                    const canEditCategory = userSession && userSession.rol === 'admin';
+                    const canEditCategory = userSession && userSession.rol === 'administrador';
                     const editCategoryButton = canEditCategory ? `<button class="edit-category-button" data-categoria="${audio.categoria}" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>` : '';
                     
                     customSection.innerHTML = `
@@ -255,7 +255,7 @@ const loadAudios = async () => {
         });
         
         // Event listeners para botones de editar categoría (solo administradores)
-        if (userSession && userSession.rol === 'admin') {
+        if (userSession && userSession.rol === 'administrador') {
             document.querySelectorAll('.edit-category-button').forEach(btn => {
                 btn.addEventListener('click', () => editCategory(btn.dataset.categoria));
             });
