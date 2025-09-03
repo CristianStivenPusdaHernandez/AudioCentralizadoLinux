@@ -6,8 +6,11 @@ class Audio {
         $this->db = Database::getInstance();
     }
     
-    public function getAll() {
-        $result = $this->db->query('SELECT id, nombre, extension, fecha_subida, categoria FROM audios ORDER BY fecha_subida DESC');
+    public function getAll($sortBy = 'nombre', $order = 'asc') {
+        // Consulta base con ordenamiento
+        $sql = 'SELECT id, nombre, extension, fecha_subida, categoria FROM audios ORDER BY ' . $sortBy . ' ' . strtoupper($order);
+        
+        $result = $this->db->query($sql);
         $audios = [];
         
         while ($row = $result->fetch_assoc()) {
