@@ -85,12 +85,7 @@
                             <option value="desc">Descendente</option>
                         </select>
                     </div>
-                    <div class="filter-group">
-                        <label for="category-filter">Categoría:</label>
-                        <select id="category-filter">
-                            <option value="">Todas</option>
-                        </select>
-                    </div>
+
                 </div>
 
                 <div class="category">

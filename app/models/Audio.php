@@ -6,27 +6,11 @@ class Audio {
         $this->db = Database::getInstance();
     }
     
-    public function getAll($sortBy = 'nombre', $order = 'asc', $category = null) {
-            // Consulta base
-        $sql = 'SELECT id, nombre, extension, fecha_subida, categoria FROM audios';
+    public function getAll($sortBy = 'nombre', $order = 'asc') {
+        // Consulta base con ordenamiento
+        $sql = 'SELECT id, nombre, extension, fecha_subida, categoria FROM audios ORDER BY ' . $sortBy . ' ' . strtoupper($order);
         
-        // Agregar filtro por categoría si se especifica
-        if ($category) {
-            $sql .= ' WHERE categoria = ?';
-        }
-        
-        // Agregar ordenamiento
-        $sql .= ' ORDER BY ' . $sortBy . ' ' . strtoupper($order);
-        
-        // Preparar y ejecutar consulta
-        if ($category) {
-            $stmt = $this->db->prepare($sql);
-            $stmt->bind_param('s', $category);
-            $stmt->execute();
-            $result = $stmt->get_result();
-        } else {
-            $result = $this->db->query($sql);
-        }
+        $result = $this->db->query($sql);
         $audios = [];
         
         while ($row = $result->fetch_assoc()) {

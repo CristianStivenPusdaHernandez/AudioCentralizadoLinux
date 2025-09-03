@@ -7,10 +7,9 @@ class AudioController extends Controller {
         //Parametros de ordenamiento
         $nombre = $_GET['sort'] ?? 'nombre';
         $orden =$_GET['order'] ?? 'asc';
-        $categoria = $_GET['category'] ?? null;
 
         // Validar los parametros
-        $todos = ['nombre','categoria','fecha_subida'];
+        $todos = ['nombre','fecha_subida'];
         $ordenes = ['asc','desc'];
 
         if(!in_array($nombre,$todos)){
@@ -21,15 +20,14 @@ class AudioController extends Controller {
         }
 
         $audioModel = $this->model('Audio');
-        $audios = $audioModel->getAll($nombre,$orden,$categoria);
+        $audios = $audioModel->getAll($nombre,$orden);
         
         $this->jsonResponse([
             'success' => true,
             'audios' => $audios,
             'count' => count($audios),
             'sort' => $nombre,
-            'order' => $orden,
-            'category' => $categoria
+            'order' => $orden
         ]);
     }
     

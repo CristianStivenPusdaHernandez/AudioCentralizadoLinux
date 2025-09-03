@@ -71,16 +71,13 @@ const checkSession = async () => {
 };
 
 // Función para cargar audios
-const loadAudios = async (sortBy = 'nombre', order = 'asc', category = null) => {
+const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
     try {
         // Construir URL con parámetros
         let url = '/App_Estacion/api/audios?';
         const params = new URLSearchParams();
         params.append('sort', sortBy);
         params.append('order', order);
-        if (category) {
-            params.append('category', category);
-        }
         url += params.toString();
         
         const response = await fetch(url, { 
@@ -149,21 +146,7 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc', category = null) => 
                 }
             });
         }
-        
-        // Poblar filtro de categorías
-        const categoryFilterSelect = document.getElementById('category-filter');
-        if (categoryFilterSelect) {
-            const dynamicOptions = categoryFilterSelect.querySelectorAll('.dynamic-option');
-            dynamicOptions.forEach(option => option.remove());
-            
-            categorias.forEach(categoria => {
-                const option = document.createElement('option');
-                option.value = categoria;
-                option.textContent = categoria;
-                option.className = 'dynamic-option';
-                categoryFilterSelect.appendChild(option);
-            });
-        }
+
         
         // Agregar botones de editar categoría para categorías predeterminadas si es admin u operador
         if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador')) {
@@ -1115,19 +1098,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Event listeners para filtros
     const sortSelect = document.getElementById('sort-select');
     const orderSelect = document.getElementById('order-select');
-    const categoryFilter = document.getElementById('category-filter');
 
-    if (sortSelect && orderSelect && categoryFilter) {
+    if (sortSelect && orderSelect) {
         const applyFilters = () => {
             const sortBy = sortSelect.value;
             const order = orderSelect.value;
-            const category = categoryFilter.value || null;
-            loadAudios(sortBy, order, category);
+            loadAudios(sortBy, order);
         };
 
         sortSelect.addEventListener('change', applyFilters);
         orderSelect.addEventListener('change', applyFilters);
-        categoryFilter.addEventListener('change', applyFilters);
     }
 
 });
