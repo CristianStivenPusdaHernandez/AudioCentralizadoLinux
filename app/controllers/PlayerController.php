@@ -88,7 +88,7 @@ class PlayerController extends Controller {
             $media = New-Object System.Windows.Media.MediaPlayer
             $media.Open([System.Uri]::new("file:///' . str_replace('\\', '/', $tempFile) . '"))
             $media.Play()
-            Start-Sleep -Seconds ' . ceil($duration + 1) . '
+            Start-Sleep -Seconds ' . ceil($duration + 2) . '
             $media.Stop()
             $media.Close()
         ';
@@ -218,7 +218,7 @@ class PlayerController extends Controller {
             Start-Sleep -Milliseconds 1000
             $media.Position = [TimeSpan]::FromSeconds(' . $pausePosition . ')
             $media.Play()
-            Start-Sleep -Seconds ' . ceil($remainingTime + 1) . '
+            Start-Sleep -Seconds ' . ceil($remainingTime + 2) . '
             $media.Stop()
             $media.Close()
         ';
@@ -335,7 +335,7 @@ class PlayerController extends Controller {
                         $media = New-Object System.Windows.Media.MediaPlayer
                         $media.Open([System.Uri]::new("file:///' . str_replace('\\', '/', $tempFile) . '"))
                         $media.Play()
-                        Start-Sleep -Seconds ' . ceil($duration + 1) . '
+                        Start-Sleep -Seconds ' . ceil($duration + 2) . '
                         $media.Stop()
                         $media.Close()
                     ';

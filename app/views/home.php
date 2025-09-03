@@ -69,7 +69,7 @@
                     <input type="text" placeholder="Buscar anuncio...">
                 </div>
 
-                <div class="category">
+                <div class="category" data-categoria="ANUNCIOS GENERALES">
                     <div class="category-header">
                         <h3><i class="fa-solid fa-play"></i> Anuncios Generales</h3>
                         <div class="category-buttons">
@@ -79,7 +79,7 @@
                     <div class="button-grid" id="general-grid"></div>
                 </div>
 
-                <div class="category">
+                <div class="category" data-categoria="ANUNCIOS DEL TREN">
                     <div class="category-header">
                         <h3><i class="fa-solid fa-train"></i> Anuncios de Tren</h3>
                         <div class="category-buttons">
