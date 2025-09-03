@@ -1,12 +1,10 @@
+# Ignorar archivos de configuración
+*.md
 # Variables de entorno
 .env
-
 # Archivos temporales
 *.tmp
 *.log
-
 # Archivos del sistema
 .DS_Store
 Thumbs.db
-API_DOCUMENTATION.md
-README.md
