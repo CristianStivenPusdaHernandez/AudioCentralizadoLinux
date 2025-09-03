@@ -75,7 +75,6 @@
                         <label for="sort-select">Ordenar por:</label>
                         <select id="sort-select">
                             <option value="nombre">Nombre</option>
-                            <option value="categoria">Categoría</option>
                             <option value="fecha_subida">Fecha</option>
                         </select>
                     </div>
