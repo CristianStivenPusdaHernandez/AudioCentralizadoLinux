@@ -93,9 +93,9 @@ class AudioController extends Controller {
     public function update($id) {
         $this->requireLogin();
         
-        // Solo administradores pueden editar categorías
-        if ($_SESSION['rol'] !== 'administrador') {
-            $this->jsonResponse(['error' => 'Solo los administradores pueden editar categorías'], 403);
+        // Solo administradores y operadores pueden editar audios
+        if ($_SESSION['rol'] !== 'administrador' && $_SESSION['rol'] !== 'operador') {
+            $this->jsonResponse(['error' => 'No tienes permisos para editar audios'], 403);
         }
         
         parse_str(file_get_contents('php://input'), $data);
@@ -144,9 +144,9 @@ class AudioController extends Controller {
     public function updateCategory() {
         $this->requireLogin();
         
-        // Solo administradores pueden editar categorías
-        if ($_SESSION['rol'] !== 'administrador') {
-            $this->jsonResponse(['error' => 'Solo los administradores pueden editar categorías'], 403);
+        // Solo administradores y operadores pueden editar categorías
+        if ($_SESSION['rol'] !== 'administrador' && $_SESSION['rol'] !== 'operador') {
+            $this->jsonResponse(['error' => 'No tienes permisos para editar categorías'], 403);
         }
         
         $input = json_decode(file_get_contents('php://input'), true);
