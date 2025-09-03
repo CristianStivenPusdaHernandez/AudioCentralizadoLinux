@@ -93,9 +93,9 @@ class AudioController extends Controller {
     public function update($id) {
         $this->requireLogin();
         
-        // Solo administradores pueden editar categorías
+        // Solo administradores pueden editar audios
         if ($_SESSION['rol'] !== 'administrador') {
-            $this->jsonResponse(['error' => 'Solo los administradores pueden editar categorías'], 403);
+            $this->jsonResponse(['error' => 'Solo los administradores pueden renombrar audios'], 403);
         }
         
         parse_str(file_get_contents('php://input'), $data);
@@ -112,6 +112,7 @@ class AudioController extends Controller {
     }
     
     public function delete($id) {
+
         $this->requirePermission('eliminar_audio');
         
         // Verificar si el audio que se va a eliminar está reproduciéndose
