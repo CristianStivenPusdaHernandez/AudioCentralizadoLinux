@@ -17,8 +17,9 @@ const showApp = (userData) => {
         userSession = userData; // Guardar datos del usuario
         
         // Mostrar/ocultar FAB según permisos
+        // Solo roles con permisos pueden subir audios
         const fab = document.querySelector('.fab');
-        if (userData.permisos && userData.permisos.includes('subir_audio')) {
+        if (userData.permisos && userData.permisos.includes('subir_audio') && userData.rol !== 'reproductor' && userData.rol !== 'lector') {
             fab.classList.remove('hidden');
         } else {
             fab.classList.add('hidden');
@@ -139,8 +140,8 @@ const loadAudios = async () => {
             });
         }
         
-        // Agregar botones de editar categoría para categorías predeterminadas si es admin
-        if (userSession && userSession.rol === 'administrador') {
+        // Agregar botones de editar categoría para categorías predeterminadas si es admin u operador
+        if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector') {
             // Anuncios Generales
             const generalCategoryButtons = document.querySelector('.category:first-of-type .category-buttons');
             if (generalCategoryButtons && !generalCategoryButtons.querySelector('.edit-category-button')) {
@@ -170,8 +171,9 @@ const loadAudios = async () => {
             audioItem.classList.add('audio-item');
             
             // Verificar permisos para mostrar botones de edición
-            const canEdit = userSession && userSession.permisos && userSession.permisos.includes('editar_audio');
-            const canDelete = userSession && userSession.permisos && userSession.permisos.includes('eliminar_audio');
+            // Solo roles con permisos específicos pueden editar/eliminar
+            const canEdit = userSession && userSession.permisos && userSession.permisos.includes('editar_audio') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector';
+            const canDelete = userSession && userSession.permisos && userSession.permisos.includes('eliminar_audio') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector';
             
             const editButton = canEdit ? `<button class="edit-button" data-id="${audio.id}"><i class="fa-solid fa-pencil-alt"></i></button>` : '';
             const deleteButton = canDelete ? `<button class="delete-button" data-id="${audio.id}"><i class="fa-solid fa-times"></i></button>` : '';
@@ -213,7 +215,7 @@ const loadAudios = async () => {
                     customSection = document.createElement('div');
                     customSection.className = 'category';
                     customSection.setAttribute('data-categoria', audio.categoria);
-                    const canEditCategory = userSession && userSession.rol === 'administrador';
+                    const canEditCategory = userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector';
                     const editCategoryButton = canEditCategory ? `<button class="edit-category-button" data-categoria="${audio.categoria}" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>` : '';
                     
                     customSection.innerHTML = `
@@ -254,8 +256,8 @@ const loadAudios = async () => {
             }
         });
         
-        // Event listeners para botones de editar categoría (solo administradores)
-        if (userSession && userSession.rol === 'administrador') {
+        // Event listeners para botones de editar categoría (administradores y operadores)
+        if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector') {
             document.querySelectorAll('.edit-category-button').forEach(btn => {
                 btn.addEventListener('click', () => editCategory(btn.dataset.categoria));
             });

@@ -7,7 +7,12 @@ class User {
      }    
 
     public function authenticate($usuario, $password) {
-        $stmt = $this->db->prepare('SELECT u.id, u.usuario, u.password, r.nombre as rol FROM usuarios u JOIN roles r ON u.rol_id = r.id WHERE u.usuario = ?');
+        $stmt = $this->db->prepare('
+            SELECT u.id, u.usuario, u.password, r.nombre as rol 
+            FROM usuarios u 
+            JOIN roles r ON u.rol_id = r.id 
+            WHERE u.usuario = ?
+        ');
         $stmt->bind_param('s', $usuario);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -27,7 +32,13 @@ class User {
     }
     
     private function getPermissions($userId) {
-        $stmt = $this->db->prepare('SELECT p.nombre FROM permisos p JOIN rol_permiso rp ON p.id = rp.permiso_id WHERE rp.rol_id = (SELECT rol_id FROM usuarios WHERE id = ?)');
+        $stmt = $this->db->prepare('
+            SELECT p.nombre 
+            FROM permisos p 
+            JOIN rol_permiso rp ON p.id = rp.permiso_id 
+            JOIN usuarios u ON rp.rol_id = u.rol_id 
+            WHERE u.id = ?
+        ');
         $stmt->bind_param('i', $userId);
         $stmt->execute();
         $result = $stmt->get_result();
