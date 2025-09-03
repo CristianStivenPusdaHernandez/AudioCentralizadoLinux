@@ -19,7 +19,7 @@ const showApp = (userData) => {
         // Mostrar/ocultar FAB según permisos
         // Solo roles con permisos pueden subir audios
         const fab = document.querySelector('.fab');
-        if (userData.permisos && userData.permisos.includes('subir_audio') && userData.rol !== 'reproductor' && userData.rol !== 'lector') {
+        if (userData.permisos && userData.permisos.includes('subir_audio') && userData.rol !== 'reproductor') {
             fab.classList.remove('hidden');
         } else {
             fab.classList.add('hidden');
@@ -172,8 +172,8 @@ const loadAudios = async () => {
             
             // Verificar permisos para mostrar botones de edición
             // Solo roles con permisos específicos pueden editar/eliminar
-            const canEdit = userSession && userSession.permisos && userSession.permisos.includes('editar_audio') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector';
-            const canDelete = userSession && userSession.permisos && userSession.permisos.includes('eliminar_audio') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector';
+            const canEdit = userSession && userSession.permisos && userSession.permisos.includes('editar_audio') && userSession.rol !== 'reproductor';
+            const canDelete = userSession && userSession.permisos && userSession.permisos.includes('eliminar_audio') && userSession.rol !== 'reproductor';
             
             const editButton = canEdit ? `<button class="edit-button" data-id="${audio.id}"><i class="fa-solid fa-pencil-alt"></i></button>` : '';
             const deleteButton = canDelete ? `<button class="delete-button" data-id="${audio.id}"><i class="fa-solid fa-times"></i></button>` : '';
@@ -215,7 +215,7 @@ const loadAudios = async () => {
                     customSection = document.createElement('div');
                     customSection.className = 'category';
                     customSection.setAttribute('data-categoria', audio.categoria);
-                    const canEditCategory = userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector';
+                    const canEditCategory = userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador');
                     const editCategoryButton = canEditCategory ? `<button class="edit-category-button" data-categoria="${audio.categoria}" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>` : '';
                     
                     customSection.innerHTML = `
@@ -257,7 +257,7 @@ const loadAudios = async () => {
         });
         
         // Event listeners para botones de editar categoría (administradores y operadores)
-        if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector') {
+        if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador')) {
             document.querySelectorAll('.edit-category-button').forEach(btn => {
                 btn.addEventListener('click', () => editCategory(btn.dataset.categoria));
             });
