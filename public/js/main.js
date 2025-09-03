@@ -141,7 +141,7 @@ const loadAudios = async () => {
         }
         
         // Agregar botones de editar categoría para categorías predeterminadas si es admin u operador
-        if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador') && userSession.rol !== 'reproductor' && userSession.rol !== 'lector') {
+        if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador')) {
             // Anuncios Generales
             const generalCategoryButtons = document.querySelector('.category:first-of-type .category-buttons');
             if (generalCategoryButtons && !generalCategoryButtons.querySelector('.edit-category-button')) {
