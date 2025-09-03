@@ -71,9 +71,16 @@ const checkSession = async () => {
 };
 
 // Función para cargar audios
-const loadAudios = async () => {
+const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
     try {
-        const response = await fetch('/App_Estacion/api/audios', { 
+        // Construir URL con parámetros
+        let url = '/App_Estacion/api/audios?';
+        const params = new URLSearchParams();
+        params.append('sort', sortBy);
+        params.append('order', order);
+        url += params.toString();
+        
+        const response = await fetch(url, { 
             method: 'GET',
             credentials: 'include'
         });
@@ -139,6 +146,7 @@ const loadAudios = async () => {
                 }
             });
         }
+
         
         // Agregar botones de editar categoría para categorías predeterminadas si es admin u operador
         if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador')) {
@@ -1086,4 +1094,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Event listeners para filtros
+    const sortSelect = document.getElementById('sort-select');
+    const orderSelect = document.getElementById('order-select');
+
+    if (sortSelect && orderSelect) {
+        const applyFilters = () => {
+            const sortBy = sortSelect.value;
+            const order = orderSelect.value;
+            loadAudios(sortBy, order);
+        };
+
+        sortSelect.addEventListener('change', applyFilters);
+        orderSelect.addEventListener('change', applyFilters);
+    }
+
 });

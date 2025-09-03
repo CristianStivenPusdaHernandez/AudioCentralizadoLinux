@@ -407,6 +407,44 @@ main::-webkit-scrollbar-thumb:hover {
     color: #ff5252;
 }
 
+.filter-controls {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #444;
+    border-radius: 8px;
+    position: relative;
+    left: 400px;
+    width: 325px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+}
+
+.filter-group label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #f0f0f0;
+    text-align: center;
+}
+
+.filter-group select {
+    padding: 8px;
+    border: 1px solid #666;
+    border-radius: 5px;
+    font-size: 14px;
+    background-color: #333;
+    color: #f0f0f0;
+    text-align: center;
+    width: 140px;
+}
+
+
 .fab {
     position: fixed;
     bottom: 30px;
