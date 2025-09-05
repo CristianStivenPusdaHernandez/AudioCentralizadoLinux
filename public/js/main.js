@@ -38,6 +38,9 @@ const showApp = (userData) => {
 }
     loadAudios(); // Cargar audios al mostrar la app
     startStatusCheck(); // Iniciar verificación de estado
+    
+    // Limpiar todos los botones "Reproducir Todo" al iniciar
+
 };
 
 // Función para obtener duración de audio (fallback para archivos locales)
@@ -108,11 +111,6 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
         console.log('Respuesta del servidor:', data);
         
         const audios = data.audios || data; // Manejar ambos formatos
-        const generalGrid = document.getElementById('general-grid');
-        const trainGrid = document.getElementById('train-grid');
-        
-        generalGrid.innerHTML = ''; // Limpiar grids existentes
-        trainGrid.innerHTML = '';
 
         if (!Array.isArray(audios)) {
             console.error('Los audios no son un array:', audios);
@@ -122,13 +120,9 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
         // Limpiar arrays de categorías
         audiosByCategory = {};
         
-        // Limpiar grids existentes
-        const allGrids = document.querySelectorAll('.button-grid');
-        allGrids.forEach(grid => {
-            if (grid.id !== 'general-grid' && grid.id !== 'train-grid') {
-                grid.parentElement.remove();
-            }
-        });
+        // Limpiar todas las categorías existentes
+        const allCategories = document.querySelectorAll('.announcements-section .category');
+        allCategories.forEach(category => category.remove());
         
         // Obtener categorías únicas para el select
         const categorias = [...new Set(audios.map(audio => audio.categoria))];
@@ -151,30 +145,7 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
         }
 
         
-        // Agregar botones de editar categoría para categorías predeterminadas si es admin u operador
-        if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador')) {
-            // Anuncios Generales
-            const generalCategoryButtons = document.querySelector('.category:first-of-type .category-buttons');
-            if (generalCategoryButtons && !generalCategoryButtons.querySelector('.edit-category-button')) {
-                const editBtn = document.createElement('button');
-                editBtn.className = 'edit-category-button';
-                editBtn.setAttribute('data-categoria', 'ANUNCIOS GENERALES');
-                editBtn.title = 'Editar categoría';
-                editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
-                generalCategoryButtons.insertBefore(editBtn, generalCategoryButtons.firstChild);
-            }
-            
-            // Anuncios del Tren
-            const trainCategoryButtons = document.querySelector('.category:nth-of-type(2) .category-buttons');
-            if (trainCategoryButtons && !trainCategoryButtons.querySelector('.edit-category-button')) {
-                const editBtn = document.createElement('button');
-                editBtn.className = 'edit-category-button';
-                editBtn.setAttribute('data-categoria', 'ANUNCIOS DEL TREN');
-                editBtn.title = 'Editar categoría';
-                editBtn.innerHTML = '<i class="fa-solid fa-pencil"></i>';
-                trainCategoryButtons.insertBefore(editBtn, trainCategoryButtons.firstChild);
-            }
-        }
+
         
         console.log(`Cargando ${audios.length} audios`);
         audios.forEach(audio => {
@@ -215,35 +186,29 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
             }
             audiosByCategory[audio.categoria].push(audio);
             
-            if (audio.categoria === 'ANUNCIOS GENERALES') {
-                generalGrid.appendChild(audioItem);
-            } else if (audio.categoria === 'ANUNCIOS DEL TREN') {
-                trainGrid.appendChild(audioItem);
-            } else {
-                // Crear nueva sección para categoría personalizada
-                let customSection = document.querySelector(`[data-categoria="${audio.categoria}"]`);
-                if (!customSection) {
-                    customSection = document.createElement('div');
-                    customSection.className = 'category';
-                    customSection.setAttribute('data-categoria', audio.categoria);
-                    const canEditCategory = userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador');
-                    const editCategoryButton = canEditCategory ? `<button class="edit-category-button" data-categoria="${audio.categoria}" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>` : '';
-                    
-                    customSection.innerHTML = `
-                        <div class="category-header">
-                            <h3><i class="fa-solid fa-music"></i> ${audio.categoria}</h3>
-                            <div class="category-buttons">
-                                ${editCategoryButton}
-                                <button class="reproducir-todo">Reproducir Todo</button>
-                            </div>
+            // Buscar sección existente o crear nueva
+            let categorySection = document.querySelector(`[data-categoria="${audio.categoria}"]`);
+            if (!categorySection) {
+                categorySection = document.createElement('div');
+                categorySection.className = 'category';
+                categorySection.setAttribute('data-categoria', audio.categoria);
+                const canEditCategory = userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador');
+                const editCategoryButton = canEditCategory ? `<button class="edit-category-button" data-categoria="${audio.categoria}" title="Editar categoría"><i class="fa-solid fa-pencil"></i></button>` : '';
+                
+                categorySection.innerHTML = `
+                    <div class="category-header">
+                        <h3><i class="fa-solid fa-music"></i> ${audio.categoria}</h3>
+                        <div class="category-buttons">
+                            ${editCategoryButton}
+                            <button class="reproducir-todo">Reproducir Todo</button>
                         </div>
-                        <div class="button-grid"></div>
-                    `;
-                    document.querySelector('.announcements-section').appendChild(customSection);
-                }
-                const customGrid = customSection.querySelector('.button-grid');
-                customGrid.appendChild(audioItem);
+                    </div>
+                    <div class="button-grid"></div>
+                `;
+                document.querySelector('.announcements-section').appendChild(categorySection);
             }
+            const categoryGrid = categorySection.querySelector('.button-grid');
+            categoryGrid.appendChild(audioItem);
         });
         
         // Agregar event listeners a los botones "Reproducir Todo"
@@ -254,18 +219,13 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
         
         document.querySelectorAll('.reproducir-todo').forEach(btn => {
             const categorySection = btn.closest('.category');
-            let categoria;
-            if (categorySection.getAttribute('data-categoria')) {
-                categoria = categorySection.getAttribute('data-categoria');
-            } else if (categorySection.querySelector('h3').textContent.includes('Generales')) {
-                categoria = 'ANUNCIOS GENERALES';
-            } else if (categorySection.querySelector('h3').textContent.includes('Tren')) {
-                categoria = 'ANUNCIOS DEL TREN';
-            }
+            const categoria = categorySection.getAttribute('data-categoria');
             if (categoria) {
-                btn.addEventListener('click', () => playAllCategory(categoria, btn));
+                btn.addEventListener('click', () => playAllCategory(categoria));
             }
         });
+        
+
         
         // Event listeners para botones de editar categoría (administradores y operadores)
         if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador')) {
@@ -292,7 +252,8 @@ let audiosByCategory = {
 let statusCheckInterval = null;
 let playAllInterval = null;
 let isPlayingAll = false;
-let currentPlayAllButton = null;
+let playAllTimeoutId = null;
+
 
 const updatePlayButton = () => {
     const playButton = document.querySelector('.player-section .play-button i');
@@ -348,7 +309,14 @@ const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
             throw new Error(`HTTP ${response.status}`);
         }
         
-        const result = await response.json();
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Error parsing JSON:', responseText);
+            throw new Error('Respuesta inválida del servidor');
+        }
         
         // Verificar si hay un audio reproduciéndose
         if (result.audio_playing && !forcePlay) {
@@ -398,13 +366,12 @@ const stopAudio = async () => {
             clearInterval(playAllInterval);
             playAllInterval = null;
         }
-        
-        // Resetear botón "Reproducir Todo"
-        if (currentPlayAllButton) {
-            currentPlayAllButton.classList.remove('active');
-            currentPlayAllButton = null;
+        if (playAllTimeoutId) {
+            clearTimeout(playAllTimeoutId);
+            playAllTimeoutId = null;
         }
         
+
         const response = await fetch('/App_Estacion/api/player/stop', {
             method: 'POST',
             headers: {
@@ -418,7 +385,16 @@ const stopAudio = async () => {
             throw new Error(`HTTP ${response.status}`);
         }
         
-        const result = await response.json();
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('Error parsing JSON:', responseText);
+            // Si no es JSON válido, asumir que se detuvo correctamente
+            result = { success: true, message: 'Audio detenido' };
+        }
+        
         console.log('Audio detenido:', result.message);
         
         // Actualizar interfaz inmediatamente
@@ -435,7 +411,12 @@ const stopAudio = async () => {
         
     } catch (error) {
         console.error('Error al detener audio:', error);
-        alert('Error al detener audio: ' + error.message);
+        // Actualizar interfaz de todos modos
+        isPlaying = false;
+        currentAudioTitle = '';
+        currentAudioId = null;
+        updatePlayButton();
+        hideProgressBar();
     }
 };
 
@@ -551,7 +532,18 @@ const checkPlayerStatus = async () => {
                     document.getElementById('current-time').textContent = '0:00';
                     document.getElementById('total-time').textContent = '0:00';
                     
-                    // El botón de repetición permanece visible siempre
+                    // Detener secuencia "Reproducir Todo" cuando el audio se detiene
+                    isPlayingAll = false;
+                    if (playAllInterval) {
+                        clearInterval(playAllInterval);
+                        playAllInterval = null;
+                    }
+                    if (playAllTimeoutId) {
+                        clearTimeout(playAllTimeoutId);
+                        playAllTimeoutId = null;
+                    }
+                    // Limpiar botones activos
+                    document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
                 }
                 isPlaying = false;
                 currentAudioTitle = '';
@@ -567,6 +559,9 @@ const checkPlayerStatus = async () => {
                         repeatButton.classList.remove('active');
                     }
                 }
+                
+                // Desactivar botón "Reproducir Todo" si no hay audio reproduciéndose
+
             }
             updatePlayButton();
         }
@@ -680,18 +675,9 @@ const togglePlayPause = async () => {
                                                 }
                                             }
                                         } catch (error) {
-                                            if (!isPlaying || !isPlayingAll) {
-                                                clearInterval(playAllInterval);
-                                                playAllInterval = null;
-                                                if (isPlayingAll) {
-                                                    currentIndex++;
-                                                    if (currentIndex < audios.length) {
-                                                        setTimeout(playNext, 500);
-                                                    } else {
-                                                        isPlayingAll = false;
-                                                    }
-                                                }
-                                            }
+                                            clearInterval(playAllInterval);
+                                            playAllInterval = null;
+                                            isPlayingAll = false;
                                         }
                                     }, 1000);
                                 };
@@ -744,7 +730,7 @@ const toggleRepeat = async () => {
     }
 };
 
-const playAllCategory = async (categoria, buttonElement) => {
+const playAllCategory = async (categoria) => {
     const audios = audiosByCategory[categoria];
     if (!audios || audios.length === 0) {
         alert('No hay audios en esta categoría');
@@ -757,13 +743,6 @@ const playAllCategory = async (categoria, buttonElement) => {
         await new Promise(resolve => setTimeout(resolve, 200));
     }
     
-    // Activar botón
-    if (currentPlayAllButton) {
-        currentPlayAllButton.classList.remove('active');
-    }
-    currentPlayAllButton = buttonElement;
-    buttonElement.classList.add('active');
-    
     isPlayingAll = true;
     let currentIndex = 0;
     // Quitar la clase activa de todos los botones
@@ -773,27 +752,23 @@ const playAllCategory = async (categoria, buttonElement) => {
     let categorySection = document.querySelector(`[data-categoria="${categoria}"]`);
     if (categorySection) {
         playAllBtn = categorySection.querySelector('.reproducir-todo');
-    } else {
-        // Para Anuncios Generales y Anuncios del Tren
-        if (categoria === 'ANUNCIOS GENERALES') {
-            const generalSection = document.querySelector('.category:first-of-type');
-            if (generalSection) playAllBtn = generalSection.querySelector('.reproducir-todo');
-        } else if (categoria === 'ANUNCIOS DEL TREN') {
-            const trainSection = document.querySelector('.category:nth-of-type(2)');
-            if (trainSection) playAllBtn = trainSection.querySelector('.reproducir-todo');
-        }
     }
     if (playAllBtn) playAllBtn.classList.add('active-playall');
 
     const playNext = async () => {
         if (!isPlayingAll || currentIndex >= audios.length) {
             isPlayingAll = false;
-            // Quitar color al terminar
-            document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
             return;
         }
         await playAudio(audios[currentIndex].id, audios[currentIndex].url, audios[currentIndex].nombre);
         playAllInterval = setInterval(async () => {
+            // Verificación doble de isPlayingAll
+            if (!isPlayingAll) {
+                clearInterval(playAllInterval);
+                playAllInterval = null;
+                document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
+                return;
+            }
             try {
                 const statusResponse = await fetch('/App_Estacion/api/player/status', {
                     method: 'GET',
@@ -801,6 +776,13 @@ const playAllCategory = async (categoria, buttonElement) => {
                 });
                 if (statusResponse.ok) {
                     const status = await statusResponse.json();
+                    // Verificar nuevamente después de la respuesta
+                    if (!isPlayingAll) {
+                        clearInterval(playAllInterval);
+                        playAllInterval = null;
+                        document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
+                        return;
+                    }
                     if (status.paused) {
                         return;
                     }
@@ -808,32 +790,25 @@ const playAllCategory = async (categoria, buttonElement) => {
                         clearInterval(playAllInterval);
                         playAllInterval = null;
                         currentIndex++;
-                        if (currentIndex < audios.length) {
-                            setTimeout(playNext, 500);
+                        if (currentIndex < audios.length && isPlayingAll) {
+                            playAllTimeoutId = setTimeout(() => {
+                                if (isPlayingAll) {
+                                    playNext();
+                                }
+                            }, 500);
                         } else {
                             isPlayingAll = false;
-                            // Quitar color al terminar
                             document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
                         }
                     }
                 }
             } catch (error) {
-                if (!isPlaying || !isPlayingAll) {
-                    clearInterval(playAllInterval);
-                    playAllInterval = null;
-                    if (isPlayingAll) {
-                        currentIndex++;
-                        if (currentIndex < audios.length) {
-                            setTimeout(playNext, 500);
-                        } else {
-                            isPlayingAll = false;
-                            // Quitar color al terminar
-                            document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
-                        }
-                    }
-                }
+                clearInterval(playAllInterval);
+                playAllInterval = null;
+                isPlayingAll = false;
+                document.querySelectorAll('.reproducir-todo').forEach(btn => btn.classList.remove('active-playall'));
             }
-        }, 1000);
+        }, 300);
     };
     playNext();
 };
