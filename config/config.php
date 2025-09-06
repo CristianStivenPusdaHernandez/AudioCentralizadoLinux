@@ -1,6 +1,4 @@
 <?php
-// Configuración de la aplicación
-
 // Cargar variables de entorno
 function loadEnv($path) {
     if (!file_exists($path)) {
@@ -25,7 +23,6 @@ function loadEnv($path) {
     }
 }
 
-// Cargar .env
 loadEnv(__DIR__ . '/../.env');
 
 // Configuraciones de la aplicación

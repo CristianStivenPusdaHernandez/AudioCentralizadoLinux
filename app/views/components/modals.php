@@ -74,7 +74,7 @@
                 <select id="user-role" name="rol" required>
                     <option value="administrador">Administrador</option>
                     <option value="operador">Operador</option>
-                    <option value="reproductor">Solo lectura</option>
+                    <option value="reproductor">Reproductor</option>
                 </select>
             </div>
             <div class="form-actions">

@@ -4,11 +4,9 @@ class AudioController extends Controller {
     public function index() {
         $this->requireLogin();
         
-        //Parametros de ordenamiento
         $nombre = $_GET['sort'] ?? 'nombre';
         $orden =$_GET['order'] ?? 'asc';
 
-        // Validar los parametros
         $todos = ['nombre','fecha_subida'];
         $ordenes = ['asc','desc'];
 
@@ -109,8 +107,7 @@ class AudioController extends Controller {
     
     public function update($id) {
         $this->requireLogin();
-        
-        // Solo administradores y operadores pueden editar audios
+    
         if ($_SESSION['rol'] !== 'administrador' && $_SESSION['rol'] !== 'operador') {
             $this->jsonResponse(['error' => 'No tienes permisos para editar audios'], 403);
         }
@@ -136,7 +133,6 @@ class AudioController extends Controller {
         $currentState = $playerState->getState();
         
         if ($currentState['playing'] && $currentState['id'] == $id) {
-            // Detener la reproducción
             $commands = [
                 'taskkill /F /IM powershell.exe 2>nul',
                 'taskkill /F /IM wmplayer.exe 2>nul'
@@ -161,7 +157,6 @@ class AudioController extends Controller {
     public function updateCategory() {
         $this->requireLogin();
         
-        // Solo administradores y operadores pueden editar categorías
         if ($_SESSION['rol'] !== 'administrador' && $_SESSION['rol'] !== 'operador') {
             $this->jsonResponse(['error' => 'No tienes permisos para editar categorías'], 403);
         }

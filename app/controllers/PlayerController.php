@@ -7,17 +7,14 @@ class PlayerController extends Controller {
     }
     
     private function getAudioDuration($audioData) {
-        // Verificar que hay datos de audio
         if (empty($audioData) || strlen($audioData) < 100) {
             error_log('Audio vacío o muy pequeño: ' . strlen($audioData) . ' bytes');
-            return 30; // Usar duración por defecto para audios de ejemplo
+            return 30; 
         }
         
-        // Crear archivo temporal
         $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.mp3';
         file_put_contents($tempFile, $audioData);
         
-        // Usar PowerShell con MediaFoundation para obtener duración más confiable
         $command = 'powershell -Command "' .
             'Add-Type -AssemblyName PresentationCore; ' .
             '$media = New-Object System.Windows.Media.MediaPlayer; ' .
@@ -72,14 +69,12 @@ class PlayerController extends Controller {
         // Log para debug
         error_log('Audio ID: ' . $audioId . ', Nombre: ' . $audio['nombre'] . ', Tamaño archivo: ' . strlen($audio['archivo']) . ' bytes');
         
-        // Detener audio actual si existe
         $this->stopCurrentAudio();
         
         // Crear archivo temporal para reproducir
         $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.mp3';
         file_put_contents($tempFile, $audio['archivo']);
         
-        // Obtener duración real
         $duration = $this->getAudioDuration($audio['archivo']);
         
         // Crear script PowerShell para reproducir

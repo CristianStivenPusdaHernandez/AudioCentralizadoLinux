@@ -54,7 +54,6 @@ body {
     overflow-y: auto;
 }
 
-/* Estilos para la aplicación principal */
 .app-container {
     display: grid;
     grid-template-rows: auto 1fr;
@@ -164,10 +163,10 @@ main::-webkit-scrollbar-thumb:hover {
     top: 0;
     z-index: 100;
     overflow: hidden;
-    width: 40%;
+    width: 100%;
     box-sizing: border-box;
     flex-shrink: 0;
-    left: 30%;
+    left: 25%;
 }
 
 .audio-progress {
@@ -345,8 +344,6 @@ main::-webkit-scrollbar-thumb:hover {
 .category-header .reproducir-todo:hover {
     background-color: #0056b3;
 }
-
-
 
 .edit-category-button {
     background: none;

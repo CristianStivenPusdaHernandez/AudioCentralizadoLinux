@@ -15,7 +15,6 @@
     padding-right: 40px !important;
 }
 
-/* Contenedor de Login */
 .login-wrapper {
     display: flex;
     justify-content: center;
@@ -89,9 +88,6 @@
     font-weight: bold;
 }
 
-/* RESPONSIVE DESIGN PARA LOGIN */
-
-/* Tablets y pantallas medianas */
 @media (max-width: 1024px) {
     .login-container {
         max-width: 350px;
@@ -99,7 +95,6 @@
     }
 }
 
-/* Móviles grandes */
 @media (max-width: 768px) {
     .login-container {
         max-width: 320px;
@@ -123,7 +118,6 @@
     }
 }
 
-/* Móviles pequeños */
 @media (max-width: 480px) {
     .login-wrapper {
         padding: 20px;
@@ -158,7 +152,6 @@
     }
 }
 
-/* Pantallas muy pequeñas */
 @media (max-width: 320px) {
     .login-wrapper {
         padding: 15px;
