@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="assets/LogoTren.PNG">
+    <link rel="icon" type="image/png" href="/assets/LogoTren.PNG">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consola de Control - Tren del Tayta Imbabura</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/login.css">
-    <link rel="stylesheet" href="css/modals.css">
-    <link rel="stylesheet" href="css/player-controls.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="/css/modals.css">
+    <link rel="stylesheet" href="/css/player-controls.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,7 +20,7 @@
     <div class="app-container hidden">
         <header>
             <div class="logo">
-                <img src="assets/LogoTren.PNG" alt="Logo Tren del Tayta Imbabura">
+                <img src="/assets/LogoTren.PNG" alt="Logo Tren del Tayta Imbabura">
             </div>
             <h2 id="titulo">Consola de Audio</h2>
             <div class="user-info" id="user-info">
@@ -98,6 +98,6 @@
 
     <?php include 'components/modals.php'; ?>
 
-    <script src="js/main.js"></script>
+    <script src="/js/main.js"></script>
 </body>
 </html>

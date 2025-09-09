@@ -15,19 +15,11 @@ class PlayerController extends Controller {
         $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.mp3';
         file_put_contents($tempFile, $audioData);
         
-        $command = 'powershell -Command "' .
-            'Add-Type -AssemblyName PresentationCore; ' .
-            '$media = New-Object System.Windows.Media.MediaPlayer; ' .
-            '$media.Open([System.Uri]::new(\"file:///' . str_replace('\\', '/', $tempFile) . '\")); ' .
-            'Start-Sleep -Milliseconds 3000; ' .
-            'if ($media.NaturalDuration.HasTimeSpan) { ' .
-                '$media.NaturalDuration.TimeSpan.TotalSeconds ' .
-            '} else { ' .
-                '30 ' .
-            '}"';
+        // Solo Linux: usar ffprobe para obtener duración
+        $command = "ffprobe -v quiet -show_entries format=duration -of csv=p=0 '$tempFile' 2>/dev/null";
         
-        $output = trim(shell_exec($command));
-        $duration = (float)$output;
+        $output = shell_exec($command);
+        $duration = (float)trim($output ?: '30');
         
         error_log('Duración obtenida para audio: ' . $duration . ' segundos');
         
@@ -77,25 +69,12 @@ class PlayerController extends Controller {
         
         $duration = $this->getAudioDuration($audio['archivo']);
         
-        // Crear script PowerShell para reproducir
-        $scriptContent = '
-            Add-Type -AssemblyName PresentationCore
-            $media = New-Object System.Windows.Media.MediaPlayer
-            $media.Open([System.Uri]::new("file:///' . str_replace('\\', '/', $tempFile) . '"))
-            $media.Play()
-            Start-Sleep -Seconds ' . ceil($duration + 2) . '
-            $media.Stop()
-            $media.Close()
-        ';
+        // Solo Linux: Configurar variables de entorno y usar ffplay
+        $envVars = 'PULSE_SERVER="unix:/mnt/wslg/PulseServer"';
+        $command = "$envVars ffplay -nodisp -autoexit '$tempFile' > /dev/null 2>&1 &";
         
-        $scriptFile = tempnam(sys_get_temp_dir(), 'play_') . '.ps1';
-        file_put_contents($scriptFile, $scriptContent);
-        
-        // Ejecutar script en segundo plano
-        $command = 'powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "' . $scriptFile . '"';
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            pclose(popen('start /B ' . $command, 'r'));
-        }
+        error_log('Ejecutando comando de audio: ' . $command);
+        shell_exec($command);
         
         // Guardar estado global
         $playerState->setState([
@@ -110,8 +89,7 @@ class PlayerController extends Controller {
         
         // Guardar archivos temporales en sesión para limpieza
         $_SESSION['temp_files'] = [
-            'temp_file' => $tempFile,
-            'script_file' => $scriptFile
+            'temp_file' => $tempFile
         ];
         
         $this->jsonResponse([
@@ -123,17 +101,13 @@ class PlayerController extends Controller {
     }
     
     private function stopCurrentAudio() {
-        // Detener procesos PowerShell relacionados con audio
-        $command = 'taskkill /F /IM powershell.exe 2>nul';
-        shell_exec($command);
+        // Solo Linux: detener todos los reproductores
+        shell_exec('pkill -f "ffplay|paplay|aplay" > /dev/null 2>&1');
         
-        // Limpiar archivos temporales de todas las sesiones
+        // Limpiar archivos temporales
         if (isset($_SESSION['temp_files'])) {
             if (isset($_SESSION['temp_files']['temp_file']) && file_exists($_SESSION['temp_files']['temp_file'])) {
                 unlink($_SESSION['temp_files']['temp_file']);
-            }
-            if (isset($_SESSION['temp_files']['script_file']) && file_exists($_SESSION['temp_files']['script_file'])) {
-                unlink($_SESSION['temp_files']['script_file']);
             }
             $_SESSION['temp_files'] = null;
         }
@@ -156,15 +130,8 @@ class PlayerController extends Controller {
         // Calcular posición actual
         $elapsed = time() - $currentState['start_time'];
         
-        // Detener procesos de audio
-        $commands = [
-            'taskkill /F /IM powershell.exe 2>nul',
-            'taskkill /F /IM wmplayer.exe 2>nul'
-        ];
-        
-        foreach ($commands as $cmd) {
-            shell_exec($cmd);
-        }
+        // Detener procesos de audio (solo Linux)
+        shell_exec('pkill -f "ffplay|paplay|aplay" > /dev/null 2>&1');
         
         // Guardar estado pausado con posición actual
         $currentState['playing'] = false;
@@ -179,88 +146,10 @@ class PlayerController extends Controller {
         ]);
     }
     
-    public function resume() {
-        $this->requireLogin();
-        
-        $playerState = $this->getPlayerState();
-        $currentState = $playerState->getState();
-        
-        if (!isset($currentState['paused']) || !$currentState['paused']) {
-            $this->jsonResponse(['error' => 'No hay audio pausado'], 400);
-        }
-        
-        // Obtener audio de la base de datos
-        $audioModel = $this->model('Audio');
-        $audio = $audioModel->getById($currentState['id']);
-        
-        if (!$audio) {
-            $this->jsonResponse(['error' => 'Audio no encontrado'], 404);
-        }
-        
-        // Crear archivo temporal
-        $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.mp3';
-        file_put_contents($tempFile, $audio['archivo']);
-        
-        // Calcular tiempo restante
-        $pausePosition = $currentState['pause_position'] ?? 0;
-        $remainingTime = $currentState['duration'] - $pausePosition;
-        
-        // Crear script PowerShell para reproducir desde la posición pausada
-        $scriptContent = '
-            Add-Type -AssemblyName PresentationCore
-            $media = New-Object System.Windows.Media.MediaPlayer
-            $media.Open([System.Uri]::new("file:///' . str_replace('\\', '/', $tempFile) . '"))
-            Start-Sleep -Milliseconds 1000
-            $media.Position = [TimeSpan]::FromSeconds(' . $pausePosition . ')
-            $media.Play()
-            Start-Sleep -Seconds ' . ceil($remainingTime + 2) . '
-            $media.Stop()
-            $media.Close()
-        ';
-        
-        $scriptFile = tempnam(sys_get_temp_dir(), 'play_') . '.ps1';
-        file_put_contents($scriptFile, $scriptContent);
-        
-        // Ejecutar script
-        $command = 'powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "' . $scriptFile . '"';
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            pclose(popen('start /B ' . $command, 'r'));
-        }
-        
-        // Actualizar estado
-        $currentState['playing'] = true;
-        $currentState['paused'] = false;
-        $currentState['start_time'] = time() - $pausePosition; // Ajustar tiempo de inicio
-        unset($currentState['pause_position']);
-        $playerState->setState($currentState);
-        
-        // Guardar archivos temporales
-        $_SESSION['temp_files'] = [
-            'temp_file' => $tempFile,
-            'script_file' => $scriptFile
-        ];
-        
-        $this->jsonResponse([
-            'success' => true,
-            'message' => 'Audio reanudado',
-            'position' => $pausePosition
-        ]);
-    }
-    
     public function stop() {
         $this->requireLogin();
         
         $this->stopCurrentAudio();
-        
-        // Detener procesos de audio
-        $commands = [
-            'taskkill /F /IM powershell.exe 2>nul',
-            'taskkill /F /IM wmplayer.exe 2>nul'
-        ];
-        
-        foreach ($commands as $cmd) {
-            shell_exec($cmd);
-        }
         
         $this->jsonResponse([
             'success' => true,
@@ -287,27 +176,14 @@ class PlayerController extends Controller {
         $currentState = $playerState->getState();
         
         if (!$currentState['playing']) {
-            // Si está pausado, mantener la información del audio
-            if (isset($currentState['paused']) && $currentState['paused']) {
-                $this->jsonResponse([
-                    'playing' => false,
-                    'paused' => true,
-                    'title' => $currentState['title'],
-                    'position' => $currentState['pause_position'] ?? 0,
-                    'duration' => $currentState['duration'],
-                    'repeat' => $currentState['repeat']
-                ]);
-            } else {
-                // Si no está pausado, no hay audio
-                $this->jsonResponse([
-                    'playing' => false,
-                    'paused' => false,
-                    'title' => null,
-                    'position' => 0,
-                    'duration' => 0,
-                    'repeat' => $currentState['repeat'] ?? false
-                ]);
-            }
+            $this->jsonResponse([
+                'playing' => false,
+                'paused' => false,
+                'title' => null,
+                'position' => 0,
+                'duration' => 0,
+                'repeat' => $currentState['repeat'] ?? false
+            ]);
             return;
         }
         
@@ -316,56 +192,15 @@ class PlayerController extends Controller {
         
         // Si el audio terminó
         if ($elapsed >= $duration) {
-            if ($currentState['repeat']) {
-                // Reiniciar si está en modo repetición
-                $audioModel = $this->model('Audio');
-                $audio = $audioModel->getById($currentState['id']);
-                if ($audio) {
-                    // Reproducir de nuevo
-                    $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.mp3';
-                    file_put_contents($tempFile, $audio['archivo']);
-                    
-                    $scriptContent = '
-                        Add-Type -AssemblyName PresentationCore
-                        $media = New-Object System.Windows.Media.MediaPlayer
-                        $media.Open([System.Uri]::new("file:///' . str_replace('\\', '/', $tempFile) . '"))
-                        $media.Play()
-                        Start-Sleep -Seconds ' . ceil($duration + 2) . '
-                        $media.Stop()
-                        $media.Close()
-                    ';
-                    
-                    $scriptFile = tempnam(sys_get_temp_dir(), 'play_') . '.ps1';
-                    file_put_contents($scriptFile, $scriptContent);
-                    
-                    $command = 'powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File "' . $scriptFile . '"';
-                    if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                        pclose(popen('start /B ' . $command, 'r'));
-                    }
-                    
-                    // Actualizar estado global
-                    $currentState['start_time'] = time();
-                    $playerState->setState($currentState);
-                    
-                    // Guardar archivos temporales
-                    $_SESSION['temp_files'] = [
-                        'temp_file' => $tempFile,
-                        'script_file' => $scriptFile
-                    ];
-                    $elapsed = 0;
-                }
-            } else {
-                // Limpiar si no está en repetición
-                $this->stopCurrentAudio();
-                $this->jsonResponse([
-                    'playing' => false,
-                    'title' => null,
-                    'position' => 0,
-                    'duration' => 0,
-                    'repeat' => false
-                ]);
-                return;
-            }
+            $this->stopCurrentAudio();
+            $this->jsonResponse([
+                'playing' => false,
+                'title' => null,
+                'position' => 0,
+                'duration' => 0,
+                'repeat' => false
+            ]);
+            return;
         }
         
         $this->jsonResponse([

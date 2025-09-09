@@ -4,3 +4,5 @@ Options -Indexes
 RewriteEngine On
 RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ public/$1 [L]
+
+<meta name="viewport" content="width=device-width, initial-scale=1">

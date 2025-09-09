@@ -133,14 +133,8 @@ class AudioController extends Controller {
         $currentState = $playerState->getState();
         
         if ($currentState['playing'] && $currentState['id'] == $id) {
-            $commands = [
-                'taskkill /F /IM powershell.exe 2>nul',
-                'taskkill /F /IM wmplayer.exe 2>nul'
-            ];
-            
-            foreach ($commands as $cmd) {
-                shell_exec($cmd);
-            }
+            // Linux: detener reproductores
+            shell_exec('pkill -f "ffplay|paplay|aplay" > /dev/null 2>&1');
             
             // Limpiar estado del reproductor
             $playerState->clearState();
