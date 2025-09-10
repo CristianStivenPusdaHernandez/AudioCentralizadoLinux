@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Flask
+instance/
+.webassets-cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Audio files (these will be uploaded by users)
+audio_files/*.mp3
+audio_files/*.wav
+audio_files/*.ogg
+audio_files/*.m4a
+
+# Keep the audio_files directory but ignore its contents
+!audio_files/.gitkeep
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/

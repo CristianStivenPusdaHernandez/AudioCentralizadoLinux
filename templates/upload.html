@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Archivos - Sistema de Audio Centralizado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-upload"></i> Subir Archivos de Audio</h1>
+            <a href="{{ url_for('index') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver al Reproductor
+            </a>
+        </header>
+
+        <div class="upload-form">
+            <form method="post" enctype="multipart/form-data">
+                <div class="file-input-wrapper">
+                    <input type="file" name="file" id="file" accept=".mp3,.wav,.ogg,.m4a" required>
+                    <label for="file">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Seleccionar archivo de audio</span>
+                    </label>
+                </div>
+                
+                <div class="supported-formats">
+                    <p>Formatos soportados: MP3, WAV, OGG, M4A</p>
+                    <p>Tamaño máximo: 100MB</p>
+                </div>
+                
+                <button type="submit" class="upload-submit-btn">
+                    <i class="fas fa-upload"></i> Subir Archivo
+                </button>
+            </form>
+        </div>
+
+        <div class="upload-tips">
+            <h3><i class="fas fa-info-circle"></i> Consejos</h3>
+            <ul>
+                <li>Los archivos se almacenan en el servidor para reproducción centralizada</li>
+                <li>Una vez subidos, estarán disponibles para todos los dispositivos en la red</li>
+                <li>Se recomienda usar archivos MP3 para mejor compatibilidad</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Audio Centralizado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-music"></i> Sistema de Audio Centralizado</h1>
+            <p>Control remoto desde cualquier dispositivo en la red local</p>
+        </header>
+
+        <div class="audio-player">
+            <div class="now-playing">
+                <h2>Reproduciendo Ahora</h2>
+                <div id="current-song">
+                    {% if current_song %}
+                        <i class="fas fa-play-circle"></i> {{ current_song }}
+                    {% else %}
+                        <i class="fas fa-stop-circle"></i> Sin reproducción
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="prev-btn" onclick="previousSong()">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                
+                <button id="play-pause-btn" onclick="togglePlayPause()">
+                    {% if is_playing and not is_paused %}
+                        <i class="fas fa-pause"></i>
+                    {% else %}
+                        <i class="fas fa-play"></i>
+                    {% endif %}
+                </button>
+                
+                <button id="stop-btn" onclick="stopAudio()">
+                    <i class="fas fa-stop"></i>
+                </button>
+                
+                <button id="next-btn" onclick="nextSong()">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+            </div>
+
+            <div class="volume-control">
+                <label for="volume">Volumen:</label>
+                <input type="range" id="volume" min="0" max="100" value="{{ volume }}" onchange="setVolume(this.value)">
+                <span id="volume-display">{{ volume }}%</span>
+            </div>
+        </div>
+
+        <div class="playlist">
+            <h2>Lista de Reproducción</h2>
+            <div class="playlist-controls">
+                <a href="{{ url_for('upload_file') }}" class="upload-btn">
+                    <i class="fas fa-upload"></i> Subir Archivos
+                </a>
+                <button onclick="refreshPlaylist()" class="refresh-btn">
+                    <i class="fas fa-sync"></i> Actualizar
+                </button>
+            </div>
+            
+            <div class="playlist-items">
+                {% if playlist %}
+                    {% for song in playlist %}
+                    <div class="playlist-item" onclick="playSong('{{ song }}')">
+                        <i class="fas fa-music"></i>
+                        <span class="song-name">{{ song }}</span>
+                        {% if song == current_song %}
+                        <i class="fas fa-volume-up playing-indicator"></i>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-songs">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No hay archivos de audio disponibles</p>
+                        <p>Sube algunos archivos para comenzar</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="status">
+            <div id="status-message"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+/* Sistema de Audio Centralizado - Estilos CSS */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+header p {
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+.back-link {
+    display: inline-block;
+    color: white;
+    text-decoration: none;
+    margin-top: 10px;
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    transition: background 0.3s;
+}
+
+.back-link:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.audio-player {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.now-playing {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.now-playing h2 {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+#current-song {
+    font-size: 1.3em;
+    font-weight: 500;
+    color: #555;
+    padding: 15px;
+    background: #f8f9ff;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.controls button {
+    background: #667eea;
+    border: none;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.controls button:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.controls button:active {
+    transform: translateY(0);
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.volume-control label {
+    font-weight: 500;
+    color: #555;
+}
+
+.volume-control input[type="range"] {
+    width: 200px;
+    height: 5px;
+    background: #ddd;
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.volume-control input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #667eea;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+#volume-display {
+    font-weight: 500;
+    color: #667eea;
+    min-width: 40px;
+}
+
+.playlist {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    margin-bottom: 30px;
+}
+
+.playlist h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.playlist-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.upload-btn, .refresh-btn {
+    background: #28a745;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    transition: all 0.3s;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.upload-btn:hover, .refresh-btn:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.refresh-btn {
+    background: #17a2b8;
+}
+
+.refresh-btn:hover {
+    background: #138496;
+}
+
+.playlist-items {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.playlist-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 10px;
+    border: 2px solid transparent;
+}
+
+.playlist-item:hover {
+    background: #f8f9ff;
+    border-color: #667eea;
+    transform: translateX(5px);
+}
+
+.playlist-item i {
+    color: #667eea;
+    width: 20px;
+}
+
+.song-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.playing-indicator {
+    color: #28a745;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.no-songs {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.no-songs i {
+    font-size: 3em;
+    margin-bottom: 20px;
+    color: #ddd;
+}
+
+.status {
+    text-align: center;
+}
+
+#status-message {
+    padding: 15px;
+    border-radius: 10px;
+    font-weight: 500;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#status-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+    opacity: 1;
+}
+
+#status-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    opacity: 1;
+}
+
+/* Upload Form Styles */
+.upload-form {
+    background: white;
+    border-radius: 15px;
+    padding: 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.file-input-wrapper {
+    margin-bottom: 30px;
+}
+
+.file-input-wrapper input[type="file"] {
+    display: none;
+}
+
+.file-input-wrapper label {
+    display: inline-block;
+    padding: 40px 60px;
+    background: #f8f9ff;
+    border: 3px dashed #667eea;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1.1em;
+    color: #667eea;
+}
+
+.file-input-wrapper label:hover {
+    background: #667eea;
+    color: white;
+}
+
+.file-input-wrapper label i {
+    display: block;
+    font-size: 3em;
+    margin-bottom: 15px;
+}
+
+.supported-formats {
+    margin-bottom: 30px;
+    color: #666;
+}
+
+.supported-formats p {
+    margin-bottom: 5px;
+}
+
+.upload-submit-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-size: 1.1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.upload-submit-btn:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.upload-tips {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.upload-tips h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.upload-tips ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.upload-tips li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.upload-tips li:last-child {
+    border-bottom: none;
+}
+
+.upload-tips li:before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    header h1 {
+        font-size: 2em;
+    }
+    
+    .controls {
+        gap: 10px;
+    }
+    
+    .controls button {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2em;
+    }
+    
+    .volume-control input[type="range"] {
+        width: 150px;
+    }
+    
+    .playlist-controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .file-input-wrapper label {
+        padding: 30px 40px;
+    }
+}

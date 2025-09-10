@@ -1,0 +1,23 @@
+[Unit]
+Description=Sistema de Audio Centralizado
+After=network.target sound.target
+
+[Service]
+Type=simple
+User=audio-server
+Group=audio
+WorkingDirectory=/opt/audio-centralizado
+Environment=PYTHONPATH=/opt/audio-centralizado
+ExecStart=/usr/bin/python3 /opt/audio-centralizado/app.py
+Restart=always
+RestartSec=3
+
+# Audio permissions
+SupplementaryGroups=audio pulse-access
+
+# Network access
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
