@@ -32,15 +32,9 @@ const showApp = (userData) => {
         } else {
             usersBtn.style.display = 'none';
         }
-
-
-
 }
     loadAudios(); // Cargar audios al mostrar la app
     startStatusCheck(); // Iniciar verificación de estado
-    
-    // Limpiar todos los botones "Reproducir Todo" al iniciar
-
 };
 
 // Función para obtener duración de audio (fallback para archivos locales)
@@ -144,9 +138,6 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
             });
         }
 
-        
-
-        
         console.log(`Cargando ${audios.length} audios`);
         audios.forEach(audio => {
             const audioItem = document.createElement('div');
@@ -224,9 +215,6 @@ const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
                 btn.addEventListener('click', () => playAllCategory(categoria));
             }
         });
-        
-
-        
         // Event listeners para botones de editar categoría (administradores y operadores)
         if (userSession && (userSession.rol === 'administrador' || userSession.rol === 'operador')) {
             document.querySelectorAll('.edit-category-button').forEach(btn => {
