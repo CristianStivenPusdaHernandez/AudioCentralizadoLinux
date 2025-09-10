@@ -41,16 +41,16 @@ class PlayerController extends Controller {
         
         // Verificar si hay audio reproduciéndose globalmente
         $playerState = $this->getPlayerState();
-        $currentState = $playerState->getState();
-        
-        if (!$forcePlay && $currentState['playing']) {
+        //VERIFICAR SI HAY AUDIO REPRODUCIENDOSE Y FORZAR DETENCION DE ANTIGUI AUDIO Y REPRODUCIR NUEVO AUDIO
+      /*   $currentState = $playerState->getState();
+          if (!$forcePlay && $currentState['playing']) {
             $this->jsonResponse([
                 'audio_playing' => true,
                 'message' => '¿Detener el audio actual y reproducir este?'
             ]);
             return;
         }
-        
+      */  
         $audioModel = $this->model('Audio');
         $audio = $audioModel->getById($audioId);
         
