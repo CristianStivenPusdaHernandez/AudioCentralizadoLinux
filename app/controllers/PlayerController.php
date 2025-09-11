@@ -6,27 +6,25 @@ class PlayerController extends Controller {
         return $playerState;
     }
     
-    private function getAudioDuration($audioData) {
+private function getAudioDuration($audioData, $extension = 'mp3') {
         if (empty($audioData) || strlen($audioData) < 100) {
             error_log('Audio vacío o muy pequeño: ' . strlen($audioData) . ' bytes');
             return 30; 
         }
         
-        $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.mp3';
+        $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.' . $extension;
         file_put_contents($tempFile, $audioData);
         
-        // Solo Linux: usar ffprobe para obtener duración
         $command = "ffprobe -v quiet -show_entries format=duration -of csv=p=0 '$tempFile' 2>/dev/null";
         
         $output = shell_exec($command);
         $duration = (float)trim($output ?: '30');
         
-        error_log('Duración obtenida para audio: ' . $duration . ' segundos');
+        error_log('Duración obtenida para audio .' . $extension . ': ' . $duration . ' segundos');
         
         unlink($tempFile);
         return $duration > 0 ? $duration : 30;
-    }
-    
+}   
     public function play() {
         $this->requireLogin();
         
@@ -62,20 +60,28 @@ class PlayerController extends Controller {
         error_log('Audio ID: ' . $audioId . ', Nombre: ' . $audio['nombre'] . ', Tamaño archivo: ' . strlen($audio['archivo']) . ' bytes');
         
         $this->stopCurrentAudio();
+             
+        $duration = $this->getAudioDuration($audio['archivo'], $audio['extension'] ?? 'mp3');
         
-        // Crear archivo temporal para reproducir
-        $tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.mp3';
-        file_put_contents($tempFile, $audio['archivo']);
-        
-        $duration = $this->getAudioDuration($audio['archivo']);
-        
-        // Solo Linux: Configurar variables de entorno y usar ffplay
-        $envVars = 'PULSE_SERVER="unix:/mnt/wslg/PulseServer"';
-        $command = "$envVars ffplay -nodisp -autoexit '$tempFile' > /dev/null 2>&1 &";
-        
-        error_log('Ejecutando comando de audio: ' . $command);
-        shell_exec($command);
-        
+// Crear archivo temporal con la extensión correcta
+$extension = $audio['extension'] ?? 'mp3';
+$tempFile = tempnam(sys_get_temp_dir(), 'audio_') . '.' . $extension;
+file_put_contents($tempFile, $audio['archivo']);
+
+// Verificar que el archivo temporal existe
+if (!file_exists($tempFile)) {
+    error_log('Error: archivo temporal no existe: ' . $tempFile);
+    $this->jsonResponse(['error' => 'Error creando archivo temporal'], 500);
+    return;
+}
+
+// Fedora: usar ffplay con extensión correcta
+$command = "PULSE_SERVER=127.0.0.1 ffplay -nodisp -autoexit '$tempFile' > /dev/null 2>&1 &";
+
+error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
+shell_exec($command);
+
+
         // Guardar estado global
         $playerState->setState([
             'id' => $audioId,
@@ -101,7 +107,7 @@ class PlayerController extends Controller {
     }
     
     private function stopCurrentAudio() {
-        // Solo Linux: detener todos los reproductores
+        // Solo Linux: detener todos los reproductores de audio
         shell_exec('pkill -f "ffplay|paplay|aplay" > /dev/null 2>&1');
         
         // Limpiar archivos temporales

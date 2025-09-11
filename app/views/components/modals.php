@@ -24,7 +24,7 @@
                 <input type="text" id="nueva-categoria" placeholder="Nombre de la nueva categoría">
             </div>
             <div class="form-group">
-                <label for="audio-file">Archivo de audio (mp3/m4a):</label>
+                <label for="audio-file">Archivo de audio (opus/amr/m4a/mp3):</label>
                 <input type="file" id="audio-file" name="audio" accept="audio/*" required>
             </div>
             <div class="form-actions">

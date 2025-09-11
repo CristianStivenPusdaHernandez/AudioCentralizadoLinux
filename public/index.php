@@ -88,6 +88,8 @@ $path = str_replace('/public', '', $path);
 if (DEBUG_MODE) {
     error_log('Request URI: ' . $requestUri);
     error_log('Parsed path: ' . $path);
+    error_log('Request method: ' . $_SERVER['REQUEST_METHOD']);
+    error_log('Content type: ' . ($_SERVER['CONTENT_TYPE'] ?? 'not set'));
 }
 
 // Ruta principal - mostrar la aplicación
@@ -100,9 +102,6 @@ if ($path === '/' || $path === '/index.php' || $path === '' || $path === '/App_E
 try {
     $router->resolve();
 } catch (Exception $e) {
-    if (DEBUG_MODE) {
-        error_log('Router error: ' . $e->getMessage());
-    }
     http_response_code(500);
-    echo json_encode(['error' => 'Internal server error']);
+    echo json_encode(['error' => $e->getMessage()]);
 }

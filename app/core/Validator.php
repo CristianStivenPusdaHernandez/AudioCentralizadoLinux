@@ -16,8 +16,8 @@ class Validator {
     }
     
     public static function audioFile($file) {
-        $allowedTypes = ['mp3', 'm4a', 'wav', 'ogg'];
-        $maxSize = 50 * 1024 * 1024; // 50MB
+        $allowedTypes = ['mp3', 'm4a', 'wav', 'ogg','opus','amr'];
+        $maxSize = 64 * 1024 * 1024; // 64MB
         
         if ($file['error'] !== UPLOAD_ERR_OK) {
             throw new InvalidArgumentException('Error al subir archivo');
@@ -29,7 +29,7 @@ class Validator {
         }
         
         if ($file['size'] > $maxSize) {
-            throw new InvalidArgumentException('Archivo muy grande (máx 50MB)');
+            throw new InvalidArgumentException('Archivo muy grande (máx 64MB)');
         }
         
         return $extension;
@@ -38,4 +38,5 @@ class Validator {
     public static function sanitizeString($value) {
         return htmlspecialchars(trim($value), ENT_QUOTES, 'UTF-8');
     }
+    
 }

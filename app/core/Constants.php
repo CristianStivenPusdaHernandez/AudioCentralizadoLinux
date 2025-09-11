@@ -10,7 +10,7 @@ class Constants {
     
     // File Upload
     const MAX_FILE_SIZE = 67108864; // 64MB
-    const ALLOWED_AUDIO_TYPES = ['mp3', 'm4a', 'wav', 'ogg'];
+    const ALLOWED_AUDIO_TYPES = ['mp3', 'm4a', 'wav', 'ogg','opus','amr'];
     
     // Audio Categories
     const CATEGORY_GENERAL = 'ANUNCIOS GENERALES';

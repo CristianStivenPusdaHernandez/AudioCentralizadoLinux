@@ -50,9 +50,12 @@ class AudioController extends Controller {
         ob_clean();
         
         $mime = 'audio/mpeg';
+        if ($audio['extension'] === 'mp3') $mime = 'audio/mpeg';
         if ($audio['extension'] === 'm4a') $mime = 'audio/mp4';
         if ($audio['extension'] === 'wav') $mime = 'audio/wav';
         if ($audio['extension'] === 'ogg') $mime = 'audio/ogg';
+        if ( $audio['extension'] === 'opus' ) $mime = 'audio/opus';
+        if( $audio['extension'] === 'amr' ) $mime = 'audio/amr';
         
         header('Content-Type: ' . $mime);
         header('Content-Length: ' . strlen($audio['archivo']));
@@ -66,12 +69,25 @@ class AudioController extends Controller {
     public function create() {
         $this->requirePermission('subir_audio');
         
+        // Debug: log del error de archivo
+        error_log('Upload attempt - FILES: ' . print_r($_FILES, true));
+        error_log('Upload attempt - POST: ' . print_r($_POST, true));
+        
+        // Debug: verificar tamaño del archivo
+        if (isset($_FILES['audio'])) {
+            error_log('File size: ' . $_FILES['audio']['size'] . ' bytes');
+            error_log('File error code: ' . $_FILES['audio']['error']);
+            error_log('Max size allowed: ' . (64 * 1024 * 1024) . ' bytes');
+        }
+        
         if (!isset($_FILES['audio']) || !isset($_POST['nombre']) || !isset($_POST['categoria'])) {
             $this->jsonResponse(['error' => 'Faltan datos'], 400);
         }
         
         if ($_FILES['audio']['error'] !== UPLOAD_ERR_OK) {
-            $this->jsonResponse(['error' => 'Error al subir archivo'], 400);
+            $errorMsg = 'Error al subir archivo: ' . $_FILES['audio']['error'];
+            error_log($errorMsg);
+            $this->jsonResponse(['error' => $errorMsg], 400);
         }
         
         $nombre = trim($_POST['nombre']);
@@ -81,7 +97,7 @@ class AudioController extends Controller {
             $this->jsonResponse(['error' => 'Nombre y categoría requeridos'], 400);
         }
         
-        $allowedTypes = ['mp3', 'm4a', 'wav', 'ogg'];
+        $allowedTypes = ['mp3', 'm4a', 'wav', 'ogg', 'opus','amr'];
         $extension = strtolower(pathinfo($_FILES['audio']['name'], PATHINFO_EXTENSION));
         
         if (!in_array($extension, $allowedTypes)) {
@@ -94,9 +110,12 @@ class AudioController extends Controller {
         }
         
         $archivo = file_get_contents($_FILES['audio']['tmp_name']);
+        error_log('File content length: ' . strlen($archivo) . ' bytes');
         
         $audioModel = $this->model('Audio');
+        error_log('Attempting to save audio to database...');
         $id = $audioModel->create($nombre, $archivo, $extension, $categoria);
+        error_log('Database save result: ' . ($id ? 'SUCCESS (ID: ' . $id . ')' : 'FAILED'));
         
         if ($id) {
             $this->jsonResponse(['success' => true, 'id' => $id]);
