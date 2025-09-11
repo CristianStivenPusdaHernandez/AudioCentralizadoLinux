@@ -24,7 +24,8 @@ private function getAudioDuration($audioData, $extension = 'mp3') {
         
         unlink($tempFile);
         return $duration > 0 ? $duration : 30;
-}   
+}
+    
     public function play() {
         $this->requireLogin();
         
