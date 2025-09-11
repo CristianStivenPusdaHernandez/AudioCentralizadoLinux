@@ -1,12 +1,24 @@
-# Ignorar archivos de configuración
-*.md
 # Variables de entorno
 .env
+/env/
+
 # Archivos temporales
 *.tmp
 *.log
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db
-config/player_state.json
-public/nul
+
+# Archivos de estado/datos temporales (¡CORREGIDO!)
+player_state.json
+
+# Archivos de IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
