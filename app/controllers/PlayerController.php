@@ -81,7 +81,15 @@ shell_exec('pkill -9 ffmpeg 2>/dev/null');
 shell_exec('pkill -9 aplay 2>/dev/null');
 usleep(100000); // Esperar 100ms
 
-// Guardar estado global ANTES de ejecutar el comando
+$command = "ffmpeg -i '$tempFile' -f wav - 2>/dev/null | aplay -q 2>/dev/null &";
+
+error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
+shell_exec($command);
+
+// Esperar un momento para que el proceso inicie
+usleep(50000); // 50ms
+
+// Guardar estado global DESPUÉS de ejecutar el comando
 $playerState->setState([
     'id' => $audioId,
     'title' => $audio['nombre'],
@@ -91,14 +99,6 @@ $playerState->setState([
     'duration' => $duration,
     'position' => 0
 ]);
-
-$command = "ffmpeg -i '$tempFile' -f wav - 2>/dev/null | aplay -q 2>/dev/null &";
-
-error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
-shell_exec($command);
-
-// Esperar un momento para que el proceso inicie
-usleep(50000); // 50ms
         
         // Guardar archivos temporales en sesión para limpieza
         $_SESSION['temp_files'] = [
