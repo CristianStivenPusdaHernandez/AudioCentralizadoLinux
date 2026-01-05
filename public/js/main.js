@@ -338,7 +338,8 @@ const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
         currentAudioTitle = audioTitle;
         updatePlayButton();
         
-        // El botón de repetición ya está siempre visible
+        // Forzar actualización inmediata del estado
+        setTimeout(checkPlayerStatus, 100);
         
     } catch (error) {
         console.error('Error de conexión:', error);

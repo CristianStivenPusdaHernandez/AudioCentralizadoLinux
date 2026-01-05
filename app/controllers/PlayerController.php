@@ -81,9 +81,6 @@ shell_exec('pkill -9 ffmpeg 2>/dev/null');
 shell_exec('pkill -9 aplay 2>/dev/null');
 usleep(100000); // Esperar 100ms
 
-// Comando simplificado que mantiene acceso al audio del sistema
-// Convertir a WAV y reproducir con aplay
-// Convertir a WAV y reproducir con aplay
 $command = "ffmpeg -i '$tempFile' -f wav - 2>/dev/null | aplay -q 2>/dev/null &";
 
 error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
