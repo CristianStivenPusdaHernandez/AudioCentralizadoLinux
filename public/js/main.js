@@ -343,10 +343,10 @@ const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
         
         updatePlayButton();
         
-        // Resetear bandera después de 2 segundos
+        // Resetear bandera después de 3 segundos
         setTimeout(() => {
             justStartedPlaying = false;
-        }, 2000);
+        }, 3000);
         
     } catch (error) {
         console.error('Error de conexión:', error);
@@ -521,8 +521,8 @@ const checkPlayerStatus = async () => {
                 }
             } else {
                 // Audio detenido completamente
-                // No ocultar si acabamos de iniciar reproducción
-                if (justStartedPlaying) {
+                // No ocultar si acabamos de iniciar reproducción O si isPlaying es true localmente
+                if (justStartedPlaying || isPlaying) {
                     return;
                 }
                 
