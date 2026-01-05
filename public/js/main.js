@@ -563,9 +563,9 @@ const startStatusCheck = () => {
     if (statusCheckInterval) {
         clearInterval(statusCheckInterval);
     }
-    statusCheckInterval = setInterval(checkPlayerStatus, 1000); // Cada 1 segundo para evitar conflictos
+    statusCheckInterval = setInterval(checkPlayerStatus, 500); // Cada 500ms para sincronización rápida
     // Verificación inmediata
-    setTimeout(checkPlayerStatus, 100);
+    checkPlayerStatus();
 };
 
 const stopStatusCheck = () => {
