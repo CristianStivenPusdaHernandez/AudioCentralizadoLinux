@@ -76,8 +76,12 @@ if (!file_exists($tempFile)) {
     return;
 }
 
+// Matar procesos anteriores primero
+shell_exec('pkill -9 ffmpeg 2>/dev/null');
+usleep(100000); // Esperar 100ms
+
 // CentOS: usar ffmpeg con ALSA (ffplay no disponible en versión estática)
-$command = "ffmpeg -i '$tempFile' -f alsa default > /dev/null 2>&1 &";
+$command = "ffmpeg -i '$tempFile' -f alsa default 2>/dev/null &";
 
 error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
 shell_exec($command);
@@ -109,7 +113,11 @@ shell_exec($command);
     
     private function stopCurrentAudio() {
         // Solo Linux: detener todos los reproductores de audio
-        shell_exec('pkill -f "ffmpeg|paplay|aplay" > /dev/null 2>&1');
+        shell_exec('pkill -9 ffmpeg > /dev/null 2>&1');
+        shell_exec('pkill -9 aplay > /dev/null 2>&1');
+        
+        // Esperar un momento para que se liberen los recursos
+        usleep(200000); // 200ms
         
         // Limpiar archivos temporales
         if (isset($_SESSION['temp_files'])) {
