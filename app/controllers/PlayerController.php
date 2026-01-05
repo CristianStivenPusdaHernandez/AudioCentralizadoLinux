@@ -81,8 +81,13 @@ shell_exec('pkill -9 ffmpeg 2>/dev/null');
 shell_exec('pkill -9 aplay 2>/dev/null');
 usleep(100000); // Esperar 100ms
 
-// CentOS: Convertir a WAV y reproducir con aplay (mejor calidad)
-$command = "nohup sh -c 'ffmpeg -i \"$tempFile\" -f wav - 2>/dev/null | aplay -q 2>/dev/null' > /dev/null 2>&1 &";
+// Obtener variables de entorno necesarias para audio
+$display = getenv('DISPLAY') ?: ':0';
+$xdgRuntime = getenv('XDG_RUNTIME_DIR') ?: '/run/user/' . posix_getuid();
+$pulseServer = "unix:$xdgRuntime/pulse/native";
+
+// Comando con variables de entorno para mantener acceso a PulseAudio
+$command = "DISPLAY=$display XDG_RUNTIME_DIR=$xdgRuntime PULSE_SERVER=$pulseServer nohup sh -c 'ffmpeg -i \"$tempFile\" -f wav - 2>/dev/null | aplay -q 2>/dev/null' > /dev/null 2>&1 &";
 
 error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
 shell_exec($command);
