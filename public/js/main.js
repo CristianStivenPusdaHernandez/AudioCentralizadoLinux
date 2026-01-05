@@ -53,7 +53,7 @@ const getAudioDuration = (url) => {
 // Verifica la sesión al cargar la página
 const checkSession = async () => {
     try {
-        const response = await fetch('/App_Estacion/api/auth', { 
+        const response = await fetch('/App_Estacion/public/api/auth', { 
             method: 'GET',
             credentials: 'include'
         });
@@ -74,7 +74,7 @@ const checkSession = async () => {
 const loadAudios = async (sortBy = 'nombre', order = 'asc') => {
     try {
         // Construir URL con parámetros
-        let url = '/App_Estacion/api/audios?';
+        let url = '/App_Estacion/public/api/audios?';
         const params = new URLSearchParams();
         params.append('sort', sortBy);
         params.append('order', order);
@@ -284,7 +284,7 @@ const hideProgressBar = () => {
 const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
     try {
         
-        const response = await fetch('/App_Estacion/api/player', {
+        const response = await fetch('/App_Estacion/public/api/player', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -360,7 +360,7 @@ const stopAudio = async () => {
         }
         
 
-        const response = await fetch('/App_Estacion/api/player/stop', {
+        const response = await fetch('/App_Estacion/public/api/player/stop', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -411,7 +411,7 @@ const stopAudio = async () => {
 // Verificar estado del reproductor cada 2 segundos
 const checkPlayerStatus = async () => {
     try {
-        const response = await fetch('/App_Estacion/api/player/status', {
+        const response = await fetch('/App_Estacion/public/api/player/status', {
             method: 'GET',
             credentials: 'include'
         });
@@ -582,7 +582,7 @@ const togglePlayPause = async () => {
             playAllInterval = null;
         }
         try {
-            const response = await fetch('/App_Estacion/api/player/pause', {
+            const response = await fetch('/App_Estacion/public/api/player/pause', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -599,7 +599,7 @@ const togglePlayPause = async () => {
     } else {
         // Verificar si hay audio pausado para reanudar
         try {
-            const statusResponse = await fetch('/App_Estacion/api/player/status', {
+            const statusResponse = await fetch('/App_Estacion/public/api/player/status', {
                 method: 'GET',
                 credentials: 'include'
             });
@@ -607,7 +607,7 @@ const togglePlayPause = async () => {
                 const status = await statusResponse.json();
                 if (status.paused) {
                     // Reanudar audio pausado
-                    const response = await fetch('/App_Estacion/api/player/resume', {
+                    const response = await fetch('/App_Estacion/public/api/player/resume', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -642,7 +642,7 @@ const togglePlayPause = async () => {
                                     // Esperar a que termine el audio antes de reproducir el siguiente
                                     playAllInterval = setInterval(async () => {
                                         try {
-                                            const statusResponse = await fetch('/App_Estacion/api/player/status', {
+                                            const statusResponse = await fetch('/App_Estacion/public/api/player/status', {
                                                 method: 'GET',
                                                 credentials: 'include'
                                             });
@@ -689,7 +689,7 @@ const toggleRepeat = async () => {
     
     try {
         // Enviar estado al servidor primero
-        const response = await fetch('/App_Estacion/api/player/status', {
+        const response = await fetch('/App_Estacion/public/api/player/status', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -758,7 +758,7 @@ const playAllCategory = async (categoria) => {
                 return;
             }
             try {
-                const statusResponse = await fetch('/App_Estacion/api/player/status', {
+                const statusResponse = await fetch('/App_Estacion/public/api/player/status', {
                     method: 'GET',
                     credentials: 'include'
                 });
@@ -805,7 +805,7 @@ const editAudio = async (id) => {
     if (!newName) return;
     
     try {
-        const response = await fetch(`/App_Estacion/api/audios/${id}`, {
+        const response = await fetch(`/App_Estacion/public/api/audios/${id}`, {
             method: 'PUT',
             credentials: 'include',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -831,7 +831,7 @@ const deleteAudio = async (id) => {
     if (!confirm('¿Está seguro de eliminar este audio?')) return;
     
     try {
-        const response = await fetch(`/App_Estacion/api/audios/${id}`, {
+        const response = await fetch(`/App_Estacion/public/api/audios/${id}`, {
             method: 'DELETE',
             credentials: 'include'
         });
@@ -856,7 +856,7 @@ const editCategory = async (oldCategory) => {
     if (!newCategory || newCategory === oldCategory) return;
     
     try {
-        const response = await fetch('/App_Estacion/api/audios/category', {
+        const response = await fetch('/App_Estacion/public/api/audios/category', {
             method: 'PATCH',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
@@ -884,7 +884,7 @@ const editCategory = async (oldCategory) => {
 // Función para cargar usuarios
 const loadUsers = async () => {
     try {
-        const response = await fetch('/App_Estacion/api/users', {
+        const response = await fetch('/App_Estacion/public/api/users', {
             method: 'GET',
             credentials: 'include'
         });
@@ -921,7 +921,7 @@ const deleteUser = async (id, username) => {
     if (!confirm(`¿Está seguro de eliminar el usuario "${username}"?`)) return;
     
     try {
-        const response = await fetch(`/App_Estacion/api/users/${id}`, {
+        const response = await fetch(`/App_Estacion/public/api/users/${id}`, {
             method: 'DELETE',
             credentials: 'include'
         });
@@ -954,7 +954,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password').value;
 
         try {
-            const response = await fetch('/App_Estacion/api/auth', {
+            const response = await fetch('/App_Estacion/public/api/auth', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -981,7 +981,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Manejar el cierre de sesión
     logoutBtn.addEventListener('click', async () => {
         stopStatusCheck();
-        await fetch('/App_Estacion/api/logout', { method: 'POST' });
+        await fetch('/App_Estacion/public/api/logout', { method: 'POST' });
         userSession = null;
         showLogin();
     });
@@ -1024,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         try {
-            const response = await fetch('/App_Estacion/api/users', {
+            const response = await fetch('/App_Estacion/public/api/users', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -1112,7 +1112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.set('categoria', nuevaCategoria.toUpperCase());
             }
             
-            const response = await fetch('/App_Estacion/api/audios', {
+            const response = await fetch('/App_Estacion/public/api/audios', {
                 method: 'POST',
                 credentials: 'include',
                 body: formData
