@@ -76,8 +76,8 @@ if (!file_exists($tempFile)) {
     return;
 }
 
-// Fedora: usar ffplay con extensión correcta
-$command = "PULSE_SERVER=127.0.0.1 ffplay -nodisp -autoexit '$tempFile' > /dev/null 2>&1 &";
+// CentOS: usar ffmpeg con ALSA (ffplay no disponible en versión estática)
+$command = "ffmpeg -i '$tempFile' -f alsa default > /dev/null 2>&1 &";
 
 error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
 shell_exec($command);
@@ -109,7 +109,7 @@ shell_exec($command);
     
     private function stopCurrentAudio() {
         // Solo Linux: detener todos los reproductores de audio
-        shell_exec('pkill -f "ffplay|paplay|aplay" > /dev/null 2>&1');
+        shell_exec('pkill -f "ffmpeg|paplay|aplay" > /dev/null 2>&1');
         
         // Limpiar archivos temporales
         if (isset($_SESSION['temp_files'])) {
@@ -138,7 +138,7 @@ shell_exec($command);
         $elapsed = time() - $currentState['start_time'];
         
         // Detener procesos de audio (solo Linux)
-        shell_exec('pkill -f "ffplay|paplay|aplay" > /dev/null 2>&1');
+        shell_exec('pkill -f "ffmpeg|paplay|aplay" > /dev/null 2>&1');
         
         // Guardar estado pausado con posición actual
         $currentState['playing'] = false;
