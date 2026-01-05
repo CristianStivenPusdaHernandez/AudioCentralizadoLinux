@@ -325,17 +325,20 @@ const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
         const audioTitle = result.title || title;
         const duration = result.duration || 0;
         
+        // Actualizar UI inmediatamente
+        isPlaying = true;
+        currentAudioTitle = audioTitle;
+        
         document.getElementById('audio-title').textContent = `🔊 ${audioTitle} (${formatTime(duration)})`;
         document.getElementById('audio-progress').classList.add('active');
         
         // Mostrar duración total inmediatamente
         if (duration > 0) {
             document.getElementById('total-time').textContent = formatTime(duration);
+            document.getElementById('current-time').textContent = '0:00';
+            document.getElementById('progress-fill').style.width = '0%';
         }
         
-        // Actualizar estado del botón
-        isPlaying = true;
-        currentAudioTitle = audioTitle;
         updatePlayButton();
         
         // Forzar actualización inmediata del estado
