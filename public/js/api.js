@@ -1,6 +1,6 @@
 class ApiClient {
     constructor() {
-        this.baseUrl = '';
+        this.baseUrl = '/AudioCentralizadoLinux/public';
     }
 
     async request(endpoint, options = {}) {
