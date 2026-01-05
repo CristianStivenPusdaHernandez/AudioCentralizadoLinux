@@ -241,6 +241,7 @@ let statusCheckInterval = null;
 let playAllInterval = null;
 let isPlayingAll = false;
 let playAllTimeoutId = null;
+let justStartedPlaying = false;
 
 
 const updatePlayButton = () => {
@@ -328,6 +329,7 @@ const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
         // Actualizar UI inmediatamente
         isPlaying = true;
         currentAudioTitle = audioTitle;
+        justStartedPlaying = true;
         
         document.getElementById('audio-title').textContent = `🔊 ${audioTitle} (${formatTime(duration)})`;
         document.getElementById('audio-progress').classList.add('active');
@@ -341,8 +343,10 @@ const playAudio = async (id, url, title = 'Audio', forcePlay = false) => {
         
         updatePlayButton();
         
-        // Forzar actualización inmediata del estado
-        setTimeout(checkPlayerStatus, 100);
+        // Resetear bandera después de 2 segundos
+        setTimeout(() => {
+            justStartedPlaying = false;
+        }, 2000);
         
     } catch (error) {
         console.error('Error de conexión:', error);
@@ -517,6 +521,11 @@ const checkPlayerStatus = async () => {
                 }
             } else {
                 // Audio detenido completamente
+                // No ocultar si acabamos de iniciar reproducción
+                if (justStartedPlaying) {
+                    return;
+                }
+                
                 if (wasPlaying) {
                     document.getElementById('audio-title').textContent = 'Selecciona un audio';
                     document.getElementById('audio-progress').classList.remove('active');
