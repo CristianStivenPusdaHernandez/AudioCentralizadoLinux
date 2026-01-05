@@ -451,11 +451,9 @@ const checkPlayerStatus = async () => {
                     `🔊 ${status.title} (${formatTime(status.duration)})` : 
                     `🔊 ${status.title}`;
                 
-                // Solo actualizar si cambió el título o el estado
-                if (!wasPlaying || !currentTitle.includes(status.title)) {
-                    document.getElementById('audio-title').textContent = titleWithDuration;
-                    document.getElementById('audio-progress').classList.add('active');
-                }
+                // Actualizar título y progreso
+                document.getElementById('audio-title').textContent = titleWithDuration;
+                document.getElementById('audio-progress').classList.add('active');
                 
                 // Mostrar progreso real si está disponible
                 if (status.duration && status.duration > 0) {
@@ -472,12 +470,9 @@ const checkPlayerStatus = async () => {
                 // Actualizar estado global
                 isPlaying = true;
                 currentAudioTitle = status.title;
-                currentAudioId = null; // Limpiar para evitar conflictos
+                currentAudioId = null;
                 
-                // El botón de repetición ya está siempre visible
                 const repeatButton = document.getElementById('repeat-button');
-                
-                // Sincronizar estado de repetición SIEMPRE
                 if (status.repeat !== undefined) {
                     isRepeating = status.repeat;
                     if (isRepeating) {
@@ -521,12 +516,13 @@ const checkPlayerStatus = async () => {
                 }
             } else {
                 // Audio detenido completamente
-                // No ocultar si acabamos de iniciar reproducción O si isPlaying es true localmente
-                if (justStartedPlaying || isPlaying) {
+                // SOLO ocultar si NO acabamos de iniciar y NO está reproduciendo localmente
+                if (justStartedPlaying || (isPlaying && !wasPlaying)) {
+                    // Mantener UI visible
                     return;
                 }
                 
-                if (wasPlaying) {
+                if (wasPlaying || isPlaying) {
                     document.getElementById('audio-title').textContent = 'Selecciona un audio';
                     document.getElementById('audio-progress').classList.remove('active');
                     document.getElementById('progress-fill').style.width = '0%';
