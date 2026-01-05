@@ -78,10 +78,11 @@ if (!file_exists($tempFile)) {
 
 // Matar procesos anteriores primero
 shell_exec('pkill -9 ffmpeg 2>/dev/null');
+shell_exec('pkill -9 aplay 2>/dev/null');
 usleep(100000); // Esperar 100ms
 
-// CentOS: usar ffmpeg con ALSA (ffplay no disponible en versión estática)
-$command = "ffmpeg -i '$tempFile' -f alsa default 2>/dev/null &";
+// CentOS: Convertir a WAV y reproducir con aplay (mejor calidad)
+$command = "nohup sh -c 'ffmpeg -i \"$tempFile\" -f wav - 2>/dev/null | aplay -q 2>/dev/null' > /dev/null 2>&1 &";
 
 error_log('Ejecutando comando de audio: ' . $command . ' (formato: ' . $extension . ')');
 shell_exec($command);
