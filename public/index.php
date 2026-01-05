@@ -93,7 +93,7 @@ if (DEBUG_MODE) {
 }
 
 // Ruta principal - mostrar la aplicación
-if ($path === '/' || $path === '/index.php' || $path === '' || $path === '/App_Estacion' || $path === '/App_Estacion/') {
+if ($path === '/' || $path === '/index.php' || $path === '' || $path === '/App_Estacion' || $path === '/App_Estacion/' || $path === '/AudioCentralizadoLinux' || $path === '/AudioCentralizadoLinux/') {
     require_once '../app/views/home.php';
     exit;
 }
